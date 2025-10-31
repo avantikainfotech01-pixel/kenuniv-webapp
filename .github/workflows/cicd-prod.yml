@@ -27,7 +27,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "build/web/*"
+          source: "build/web/."
           target: "/var/www/html"
 
       - name: Reload Nginx
