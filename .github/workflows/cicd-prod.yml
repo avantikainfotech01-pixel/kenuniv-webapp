@@ -27,8 +27,9 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "build/web/."
+          source: "build/web/*"
           target: "/var/www/html"
+          strip_components: 2
 
       - name: Reload Nginx
         uses: appleboy/ssh-action@v1.1.0
