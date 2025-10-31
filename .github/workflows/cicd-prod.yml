@@ -3,7 +3,7 @@ name: Build and Deploy Flutter Web
 on:
   push:
     branches:
-      - master  # Deploy when pushing to main
+      - main
 
 jobs:
   build-and-deploy:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable'
+          flutter-version: '3.24.3'   # ✅ Pin to a known working version
 
       - name: Build Flutter web
         run: flutter build web --release
@@ -29,5 +29,11 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           source: "build/web/*"
           target: "/var/www/html"
-          script: sudo systemctl reload nginx
 
+      - name: Reload Nginx
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: sudo systemctl reload nginx
