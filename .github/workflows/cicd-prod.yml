@@ -1,0 +1,33 @@
+name: Build and Deploy Flutter Web
+
+on:
+  push:
+    branches:
+      - master  # Deploy when pushing to main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      - name: Build Flutter web
+        run: flutter build web --release
+
+      - name: Deploy to VPS via SSH (username + password)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          source: "build/web/*"
+          target: "/var/www/html"
+          script: sudo systemctl reload nginx
+
