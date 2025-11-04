@@ -2,7 +2,7 @@
 // For Android Emulator use: http://10.0.2.2:5000
 // For iOS Simulator or Web use: http://localhost:5000
 // For real devices, replace with your system's IP (e.g. http://192.168.1.5:5000)
-const String baseUrl = "http://localhost:3000";
+const String baseUrl = "http://api.kenuniv.com";
 // --- AUTH ---
 const String loginEndpoint = "$baseUrl/login";
 const String adminLoginEndpoint = "$baseUrl/api/admin/user-master-login";
