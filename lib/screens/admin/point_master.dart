@@ -36,7 +36,7 @@ class _PointMasterState extends ConsumerState<PointMaster> {
   Future<void> deletePointMaster(String id) async {
     try {
       final response = await http.delete(
-        Uri.parse('http://localhost:3000/api/point/points/$id'),
+        Uri.parse('http://api.kenuniv.com/api/point/points/$id'),
       );
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -54,7 +54,7 @@ class _PointMasterState extends ConsumerState<PointMaster> {
   Future<void> fetchPointMasters() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/point/points'),
+        Uri.parse('http://api.kenuniv.com/api/point/points'),
       );
       if (response.statusCode == 200) {
         final List data = json.decode(response.body);
@@ -76,7 +76,7 @@ class _PointMasterState extends ConsumerState<PointMaster> {
       };
       try {
         final response = await http.post(
-          Uri.parse('http://localhost:3000/api/point/points'),
+          Uri.parse('http://api.kenuniv.com/api/point/points'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(body),
         );
