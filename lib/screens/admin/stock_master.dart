@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:kenuniv/models/stock_model.dart';
+import 'package:kenuniv/models/scheme_model.dart';
 import 'package:kenuniv/providers/stock_provider.dart';
 import 'package:kenuniv/utils/constant.dart';
 import 'package:kenuniv/providers/scheme_provider.dart';
+import 'package:kenuniv/providers/auth_provider.dart';
 
 class StockMaster extends ConsumerStatefulWidget {
   const StockMaster({super.key});
@@ -19,8 +20,16 @@ class _StockMasterState extends ConsumerState<StockMaster> {
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _minQtyController = TextEditingController();
   DateTime? selectedDate;
+  String? selectedSchemeId;
+  String? selectedProductName;
+
   Future<void> _submitStock() async {
-    if (selectedProduct == null ||
+    // Get permission state
+    final authState = ref.read(authProvider);
+    final canWrite = authState.permissions?['stock'] == true;
+    final isReadOnly = !canWrite;
+    if (isReadOnly) return;
+    if (selectedSchemeId == null ||
         _quantityController.text.isEmpty ||
         _minQtyController.text.isEmpty) {
       ScaffoldMessenger.of(
@@ -31,10 +40,10 @@ class _StockMasterState extends ConsumerState<StockMaster> {
 
     final url = Uri.parse('$baseUrl/api/admin/stocks');
     final body = {
-      "itemName": selectedProduct!,
+      "schemeId": selectedSchemeId!,
+      "itemName": selectedProductName ?? "",
       "quantity": int.tryParse(_quantityController.text) ?? 0,
       "minQty": int.tryParse(_minQtyController.text) ?? 0,
-      "schemeId": selectedProduct, // adjust if using scheme id instead of name
     };
 
     try {
@@ -51,13 +60,14 @@ class _StockMasterState extends ConsumerState<StockMaster> {
         _quantityController.clear();
         _minQtyController.clear();
         setState(() {
-          selectedProduct = null;
+          selectedSchemeId = null;
+          selectedProductName = null;
           selectedDate = null;
         });
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${response.body}')));
+        ).showSnackBar(SnackBar(content: Text('Failed: ${response.body}')));
       }
     } catch (e) {
       ScaffoldMessenger.of(
@@ -91,6 +101,9 @@ class _StockMasterState extends ConsumerState<StockMaster> {
   Widget build(BuildContext context) {
     final schemesAsync = ref.watch(schemeProvider);
     final stocksAsync = ref.watch(stockProvider);
+    final authState = ref.watch(authProvider);
+    final canWrite = authState.permissions?['stock'] == true;
+    final isReadOnly = !canWrite;
 
     return Scaffold(
       appBar: AppBar(
@@ -121,28 +134,56 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                     children: [
                       Expanded(
                         child: schemesAsync.when(
-                          data: (schemes) => DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Select Gift',
-                              border: OutlineInputBorder(),
-                            ),
-                            value: selectedProduct,
-                            items: schemes
+                          data: (schemes) {
+                            final activeSchemes = schemes
                                 .where((scheme) => scheme.status == "active")
-                                .toList()
-                                .map(
-                                  (scheme) => DropdownMenuItem<String>(
-                                    value: scheme.schemeName,
-                                    child: Text(scheme.productName ?? ''),
+                                .toList();
+                            if (activeSchemes.isEmpty) {
+                              return const Text("No active schemes available");
+                            }
+                            return DropdownButtonFormField<String>(
+                              decoration: const InputDecoration(
+                                labelText: 'Select Gift Scheme',
+                                border: OutlineInputBorder(),
+                              ),
+                              value: selectedSchemeId,
+                              items: activeSchemes.map((scheme) {
+                                return DropdownMenuItem<String>(
+                                  value: scheme.id,
+                                  child: Text(
+                                    "${scheme.productName ?? ''} (${scheme.schemeName ?? ''})",
                                   ),
-                                )
-                                .toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                selectedProduct = value;
-                              });
-                            },
-                          ),
+                                );
+                              }).toList(),
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (value) {
+                                      final selected = activeSchemes.firstWhere(
+                                        (s) => s.id == value,
+                                        orElse: () => activeSchemes.first,
+                                      );
+                                      setState(() {
+                                        selectedSchemeId = selected.id;
+                                        selectedProductName =
+                                            selected.productName;
+                                      });
+                                    },
+                              // Disable dropdown if read-only
+                              disabledHint: selectedSchemeId != null
+                                  ? Text(
+                                      activeSchemes
+                                              .firstWhere(
+                                                (s) => s.id == selectedSchemeId,
+                                                orElse: () =>
+                                                    activeSchemes.first,
+                                              )
+                                              .productName ??
+                                          '',
+                                    )
+                                  : null,
+                              // Not all DropdownButtonFormField support enabled, so we use onChanged: null to disable
+                            );
+                          },
                           loading: () =>
                               const Center(child: CircularProgressIndicator()),
                           error: (error, stack) => Text('Error: $error'),
@@ -157,6 +198,7 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                             labelText: 'Quantity',
                             border: OutlineInputBorder(),
                           ),
+                          enabled: !isReadOnly,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -168,13 +210,14 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                             labelText: 'Minimum Quantity',
                             border: OutlineInputBorder(),
                           ),
+                          enabled: !isReadOnly,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   GestureDetector(
-                    onTap: () => _pickDate(context),
+                    onTap: isReadOnly ? null : () => _pickDate(context),
                     child: AbsorbPointer(
                       child: TextField(
                         decoration: InputDecoration(
@@ -190,6 +233,7 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                               ? ''
                               : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
                         ),
+                        enabled: !isReadOnly,
                       ),
                     ),
                   ),
@@ -209,7 +253,7 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        onPressed: _submitStock,
+                        onPressed: isReadOnly ? null : _submitStock,
                         child: const Text(
                           'Submit',
                           style: TextStyle(
@@ -236,82 +280,186 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                 width: double.infinity,
                 child: schemesAsync.when(
                   data: (schemes) => stocksAsync.when(
-                    data: (stocks) => DataTable(
-                      columns: const [
-                        DataColumn(
-                          label: Text(
-                            'No.',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Image',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Product Name',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Scheme Name',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Quantity',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Min Qty',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Low Stock',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                      rows: schemes.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        final scheme = entry.value;
-                        // final stock = stocksMap[scheme.id];
-
-                        return DataRow(
-                          cells: [
-                            DataCell(Text('${index + 1}')),
-                            DataCell(
-                              scheme.image != null && scheme.image!.isNotEmpty
-                                  ? Image.network(
-                                      scheme.image!,
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : const SizedBox(width: 50, height: 50),
+                    data: (stocks) => SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.15),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 3),
                             ),
-                            DataCell(Text(scheme.productName ?? '')),
-                            DataCell(Text(scheme.schemeName ?? '')),
-                            DataCell(Text(scheme.points.toString())),
-                            // DataCell(Text(stock != null ? '${stock.quantity}' : '0')),
-                            // DataCell(Text(stock != null ? '${stock.minQty}' : '0')),
-                            // DataCell(
-                            //   (stock != null && stock.quantity < stock.minQty)
-                            //       ? BlinkWidget()
-                            //       : const SizedBox.shrink(),
-                            // ),
                           ],
-                        );
-                      }).toList(),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: DataTable(
+                            dataRowHeight: 70,
+                            headingRowColor: WidgetStateProperty.all(
+                              Colors.red.withOpacity(0.1),
+                            ),
+                            headingTextStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                              fontSize: 15,
+                            ),
+                            columnSpacing: 25,
+                            showBottomBorder: true,
+                            columns: const [
+                              DataColumn(label: Text('No.')),
+                              DataColumn(label: Text('Image')),
+                              DataColumn(label: Text('Gift Name')),
+                              DataColumn(label: Text('Scheme')),
+                              DataColumn(label: Text('Quantity')),
+                              DataColumn(label: Text('Min Qty')),
+                              DataColumn(label: Text('Status')),
+                            ],
+                            rows: List<DataRow>.generate(stocks.length, (
+                              index,
+                            ) {
+                              final stock = stocks[index];
+                              final scheme = schemes.firstWhere(
+                                (s) => s.id == stock.schemeId?.id,
+                                orElse: () => Scheme(
+                                  id: '',
+                                  schemeName: stock.schemeId?.schemeName ?? '',
+                                  productName:
+                                      stock.schemeId?.productName ?? '',
+                                  points: stock.schemeId?.points ?? 0,
+                                ),
+                              );
+
+                              final isLowStock = stock.quantity <= stock.minQty;
+
+                              return DataRow(
+                                color: WidgetStateProperty.all(
+                                  index.isEven
+                                      ? Colors.grey.shade50
+                                      : Colors.white,
+                                ),
+                                cells: [
+                                  DataCell(Text('${index + 1}')),
+                                  DataCell(
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child:
+                                          (scheme.image != null &&
+                                              scheme.image!.isNotEmpty)
+                                          ? Image.network(
+                                              '$baseUrl${scheme.image}',
+                                              width: 55,
+                                              height: 55,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Container(
+                                              width: 55,
+                                              height: 55,
+                                              color: Colors.grey.shade200,
+                                              child: const Icon(
+                                                Icons.image_not_supported,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      scheme.productName.isNotEmpty
+                                          ? scheme.productName
+                                          : stock.itemName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      scheme.schemeName,
+                                      style: const TextStyle(
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      stock.quantity.toString(),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isLowStock
+                                            ? Colors.red
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(Text(stock.minQty.toString())),
+                                  DataCell(
+                                    isLowStock
+                                        ? Row(
+                                            children: [
+                                              BlinkWidget(),
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red.withOpacity(
+                                                    0.1,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  border: Border.all(
+                                                    color: Colors.red.shade300,
+                                                  ),
+                                                ),
+                                                child: const Text(
+                                                  'Low Stock',
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.withOpacity(
+                                                0.1,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Colors.green.shade300,
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'OK',
+                                              style: TextStyle(
+                                                color: Colors.green,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                  ),
+                                ],
+                              );
+                            }),
+                          ),
+                        ),
+                      ),
                     ),
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),

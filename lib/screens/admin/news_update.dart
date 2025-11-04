@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:kenuniv/providers/auth_provider.dart';
 import 'package:kenuniv/utils/constant.dart';
 import '../../providers/news_provider.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_player_web/video_player_web.dart';
 
 class NewsUpdate extends ConsumerStatefulWidget {
   const NewsUpdate({super.key});
@@ -16,7 +18,8 @@ class NewsUpdate extends ConsumerStatefulWidget {
 
 class _NewsUpdateState extends ConsumerState<NewsUpdate> {
   final ImagePicker _picker = ImagePicker();
-  XFile? _imageFile;
+  XFile? _mediaFile;
+  String? _mediaType; // 'image' or 'video'
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -29,7 +32,20 @@ class _NewsUpdateState extends ConsumerState<NewsUpdate> {
     );
     if (pickedFile != null) {
       setState(() {
-        _imageFile = pickedFile;
+        _mediaFile = pickedFile;
+        _mediaType = 'image';
+      });
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    final XFile? pickedFile = await _picker.pickVideo(
+      source: ImageSource.gallery,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _mediaFile = pickedFile;
+        _mediaType = 'video';
       });
     }
   }
@@ -44,15 +60,9 @@ class _NewsUpdateState extends ConsumerState<NewsUpdate> {
   @override
   Widget build(BuildContext context) {
     final newsAsync = ref.watch(newsProvider);
-
-    // // 🔑 Get user permissions from auth provider
-    // final authState = ref.watch(authProvider);
-    // final userPermissions = authState.when(
-    //   data: (loginResponse) => loginResponse?.user.permissions ?? {},
-    //   loading: () => {},
-    //   error: (_, __) => {},
-    // );
-    // final canEditNews = userPermissions['news'] == true;
+    // Get user permissions from auth provider
+    final authState = ref.watch(authProvider);
+    final canEditNews = authState.permissions?['news'] == true;
 
     return Scaffold(
       appBar: AppBar(
@@ -77,51 +87,147 @@ class _NewsUpdateState extends ConsumerState<NewsUpdate> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Upload Photo Section
-                        InkWell(
-                          onTap: _pickImage,
-                          child: Container(
-                            width: 180,
-                            height: 190,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: _imageFile == null
-                                ? Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(
-                                        Icons.upload_outlined,
-                                        size: 40,
-                                        color: Colors.grey,
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        'News Photo',
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                    ],
-                                  )
-                                : ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: kIsWeb
-                                        ? Image.network(
-                                            _imageFile!.path, // works for web
-                                            fit: BoxFit.cover,
-                                            width: 180,
-                                            height: 190,
-                                          )
-                                        : Image.file(
-                                            File(
-                                              _imageFile!.path,
-                                            ), // works for mobile
-                                            fit: BoxFit.cover,
-                                            width: 180,
-                                            height: 190,
-                                          ),
+                        // Upload Media Section (Image/Video)
+                        Column(
+                          children: [
+                            Row(
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: canEditNews ? _pickImage : null,
+                                  icon: const Icon(Icons.image),
+                                  label: const Text('Pick Image'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue.shade400,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
                                   ),
-                          ),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton.icon(
+                                  onPressed: canEditNews ? _pickVideo : null,
+                                  icon: const Icon(Icons.videocam),
+                                  label: const Text('Pick Video'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green.shade400,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () {
+                                if (_mediaFile != null) {
+                                  if (_mediaType == 'image') {
+                                    // Show full image dialog
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => Dialog(
+                                        child: kIsWeb
+                                            ? Image.network(_mediaFile!.path)
+                                            : Image.file(
+                                                File(_mediaFile!.path),
+                                              ),
+                                      ),
+                                    );
+                                  } else if (_mediaType == 'video') {
+                                    // Show video in dialog
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => Dialog(
+                                        child: _VideoPlayerDialog(
+                                          videoUrl: kIsWeb
+                                              ? _mediaFile!.path
+                                              : null,
+                                          videoFile: kIsWeb
+                                              ? null
+                                              : File(_mediaFile!.path),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              child: Container(
+                                width: 180,
+                                height: 190,
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: _mediaFile == null
+                                    ? Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: const [
+                                          Icon(
+                                            Icons.upload_outlined,
+                                            size: 40,
+                                            color: Colors.grey,
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            'News Media',
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : _mediaType == 'image'
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: kIsWeb
+                                            ? Image.network(
+                                                _mediaFile!.path,
+                                                fit: BoxFit.cover,
+                                                width: 180,
+                                                height: 190,
+                                              )
+                                            : Image.file(
+                                                File(_mediaFile!.path),
+                                                fit: BoxFit.cover,
+                                                width: 180,
+                                                height: 190,
+                                              ),
+                                      )
+                                    : Stack(
+                                        children: [
+                                          Container(
+                                            width: 180,
+                                            height: 190,
+                                            color: Colors.black12,
+                                            child: Center(
+                                              child: Icon(
+                                                Icons.videocam,
+                                                size: 80,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          ),
+                                          const Positioned(
+                                            left: 0,
+                                            right: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            child: Center(
+                                              child: Icon(
+                                                Icons.play_circle_fill,
+                                                size: 56,
+                                                color: Colors.white70,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(width: 20),
                         // Fields Section
@@ -156,36 +262,37 @@ class _NewsUpdateState extends ConsumerState<NewsUpdate> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          if (_imageFile != null) {
-                            dynamic imageForUpload;
+                        onPressed: canEditNews
+                            ? () async {
+                                if (_mediaFile != null && _mediaType != null) {
+                                  dynamic fileForUpload;
+                                  if (kIsWeb) {
+                                    final bytes = await _mediaFile!
+                                        .readAsBytes();
+                                    fileForUpload = bytes;
+                                  } else {
+                                    fileForUpload = File(_mediaFile!.path);
+                                  }
 
-                            if (kIsWeb) {
-                              // On web, read bytes
-                              final bytes = await _imageFile!.readAsBytes();
-                              imageForUpload =
-                                  bytes; // send bytes to your provider
-                            } else {
-                              // On mobile, use File
-                              imageForUpload = File(_imageFile!.path);
-                            }
+                                  await ref
+                                      .read(newsProvider.notifier)
+                                      .addNews(
+                                        mediaFile: fileForUpload,
+                                        mediaType: _mediaType ?? '',
+                                        title: _titleController.text,
+                                        description:
+                                            _descriptionController.text,
+                                      );
 
-                            await ref
-                                .read(newsProvider.notifier)
-                                .addNews(
-                                  imageFile: imageForUpload,
-
-                                  title: _titleController.text,
-                                  description: _descriptionController.text,
-                                );
-
-                            _titleController.clear();
-                            _descriptionController.clear();
-                            setState(() {
-                              _imageFile = null;
-                            });
-                          }
-                        },
+                                  _titleController.clear();
+                                  _descriptionController.clear();
+                                  setState(() {
+                                    _mediaFile = null;
+                                    _mediaType = null;
+                                  });
+                                }
+                              }
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           padding: const EdgeInsets.symmetric(
@@ -257,9 +364,67 @@ class _NewsUpdateState extends ConsumerState<NewsUpdate> {
                                     SizedBox(
                                       width: 100,
                                       height: 60,
-                                      child: Image.network(
-                                        '${baseUrl}${news.image}',
-                                        fit: BoxFit.fill,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          if (news.mediaType == 'image') {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => Dialog(
+                                                child: Image.network(
+                                                  '${baseUrl}${news.media}',
+                                                  fit: BoxFit.contain,
+                                                ),
+                                              ),
+                                            );
+                                          } else if (news.mediaType ==
+                                              'video') {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => Dialog(
+                                                child: _VideoPlayerDialog(
+                                                  videoUrl:
+                                                      '${baseUrl}${news.media}',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        child: news.mediaType == 'image'
+                                            ? Image.network(
+                                                '${baseUrl}${news.media}',
+                                                fit: BoxFit.fill,
+                                              )
+                                            : Stack(
+                                                children: [
+                                                  Container(
+                                                    color: Colors.black12,
+                                                    width: 100,
+                                                    height: 60,
+                                                    child: Center(
+                                                      child: Icon(
+                                                        Icons.videocam,
+                                                        size: 36,
+                                                        color: Colors
+                                                            .grey
+                                                            .shade600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const Positioned(
+                                                    left: 0,
+                                                    right: 0,
+                                                    top: 0,
+                                                    bottom: 0,
+                                                    child: Center(
+                                                      child: Icon(
+                                                        Icons.play_circle_fill,
+                                                        size: 32,
+                                                        color: Colors.white70,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                       ),
                                     ),
                                     const SizedBox(width: 16),
@@ -285,14 +450,16 @@ class _NewsUpdateState extends ConsumerState<NewsUpdate> {
                                     Icons.delete,
                                     color: Colors.red,
                                   ),
-                                  onPressed: () async {
-                                    await ref
-                                        .read(newsProvider.notifier)
-                                        .deleteNews(news.id);
-                                    setState(() {
-                                      _localNewsList.removeAt(index);
-                                    });
-                                  },
+                                  onPressed: canEditNews
+                                      ? () async {
+                                          await ref
+                                              .read(newsProvider.notifier)
+                                              .deleteNews(news.id);
+                                          setState(() {
+                                            _localNewsList.removeAt(index);
+                                          });
+                                        }
+                                      : null,
                                 ),
                               ],
                             ),
@@ -310,6 +477,115 @@ class _NewsUpdateState extends ConsumerState<NewsUpdate> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Widget for video preview dialog (mobile and web with correct url/file)
+
+class _VideoPlayerDialog extends StatefulWidget {
+  final File? videoFile;
+  final String? videoUrl;
+  const _VideoPlayerDialog({Key? key, this.videoFile, this.videoUrl})
+    : super(key: key);
+  @override
+  State<_VideoPlayerDialog> createState() => _VideoPlayerDialogState();
+}
+
+class _VideoPlayerDialogState extends State<_VideoPlayerDialog> {
+  VideoPlayerController? _controller;
+  Future<void>? _initializeVideoPlayerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    try {
+      if (widget.videoFile != null) {
+        _controller = VideoPlayerController.file(widget.videoFile!);
+      } else if (widget.videoUrl != null && widget.videoUrl!.isNotEmpty) {
+        // Ensure HTTPS absolute URL
+        final videoUrl =
+            (widget.videoUrl!.startsWith('http') ||
+                widget.videoUrl!.startsWith('blob:'))
+            ? widget.videoUrl!
+            : '$baseUrl${widget.videoUrl}';
+        if (kIsWeb) {
+          _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+        } else {
+          _controller = VideoPlayerController.network(videoUrl);
+        }
+      }
+
+      if (_controller != null) {
+        _initializeVideoPlayerFuture = _controller!
+            .initialize()
+            .then((_) async {
+              await _controller!.setLooping(true);
+              await _controller!.play();
+              setState(() {});
+            })
+            .catchError((e) {
+              debugPrint('Video init error: $e');
+              setState(() {}); // To trigger error display in FutureBuilder
+            });
+      }
+    } catch (e) {
+      debugPrint('Video controller init exception: $e');
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_controller == null) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: Text('Invalid video')),
+      );
+    }
+
+    return FutureBuilder(
+      future: _initializeVideoPlayerFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            _controller!.value.isInitialized) {
+          return AspectRatio(
+            aspectRatio: _controller!.value.aspectRatio,
+            child: VideoPlayer(_controller!),
+          );
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Failed to load video',
+              style: TextStyle(color: Colors.red),
+            ),
+          );
+        } else if (snapshot.connectionState == ConnectionState.waiting ||
+            snapshot.connectionState == ConnectionState.active) {
+          return Container(
+            width: 400,
+            height: 220,
+            color: Colors.black12,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.redAccent),
+            ),
+          );
+        } else {
+          // Unlikely, but fallback error
+          return Center(
+            child: Text(
+              'Failed to load video',
+              style: TextStyle(color: Colors.red),
+            ),
+          );
+        }
+      },
     );
   }
 }

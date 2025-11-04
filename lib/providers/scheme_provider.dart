@@ -1,12 +1,11 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' hide MultipartFile;
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:kenuniv/core/api_service.dart';
 import 'package:kenuniv/utils/constant.dart';
 import '../models/scheme_model.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
-import 'package:http_parser/http_parser.dart';
-import 'package:dio/dio.dart';
 
 class SchemeNotifier extends StateNotifier<AsyncValue<List<Scheme>>> {
   final ApiService apiService;
@@ -20,9 +19,7 @@ class SchemeNotifier extends StateNotifier<AsyncValue<List<Scheme>>> {
       final response = await apiService.getRequest(
         '$baseUrl/api/admin/fetch-schemes',
       );
-
-      // ✅ API returns { success: true, schemes: [...] }
-      final List<dynamic> data = response['schemes'] ?? [];
+      final List<dynamic> data = response['data'] ?? [];
       final schemes = data.map((e) => Scheme.fromJson(e)).toList();
       state = AsyncValue.data(schemes.cast<Scheme>());
     } catch (e, st) {
@@ -31,22 +28,21 @@ class SchemeNotifier extends StateNotifier<AsyncValue<List<Scheme>>> {
   }
 
   Future<void> addScheme({
-    required dynamic imageFile, // File on mobile, Uint8List on web
+    required dynamic imageFile,
     required String schemeName,
     required String productName,
     required int points,
   }) async {
     try {
       final formData = FormData();
-
-      formData.fields
-        ..add(MapEntry('schemeName', schemeName))
-        ..add(MapEntry('productName', productName))
-        ..add(MapEntry('points', points.toString()))
-        ..add(MapEntry('status', 'active'));
+      formData.fields.addAll([
+        MapEntry('schemeName', schemeName),
+        MapEntry('productName', productName),
+        MapEntry('points', points.toString()),
+        MapEntry('status', 'active'),
+      ]);
 
       if (kIsWeb) {
-        // On web, imageFile is Uint8List
         formData.files.add(
           MapEntry(
             'image',
@@ -58,7 +54,6 @@ class SchemeNotifier extends StateNotifier<AsyncValue<List<Scheme>>> {
           ),
         );
       } else {
-        // On mobile, imageFile is File
         formData.files.add(
           MapEntry(
             'image',
@@ -70,17 +65,11 @@ class SchemeNotifier extends StateNotifier<AsyncValue<List<Scheme>>> {
         );
       }
 
-      // Use Dio directly for multipart upload
       final dio = Dio();
       await dio.post(
         '$baseUrl/api/admin/schemes',
         data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer ${apiService.token}',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
       );
 
       await fetchSchemes();

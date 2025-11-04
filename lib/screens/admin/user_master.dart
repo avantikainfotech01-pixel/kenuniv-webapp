@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:kenuniv/core/api_service.dart';
+import 'package:kenuniv/providers/auth_provider.dart';
 import 'package:kenuniv/utils/constant.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -13,10 +14,14 @@ class UserMaster extends ConsumerStatefulWidget {
 }
 
 class _UserMasterState extends ConsumerState<UserMaster> {
+  // Property to check if the current user has edit permission for userMaster
+  bool get isReadOnly =>
+      !(ref.watch(authProvider).permissions?['userMaster'] ?? false);
   late String token;
   List<dynamic> _fetchedUsers = [];
   bool _isLoading = false;
   List<String> _accessRights = [];
+  String _selectedRole = 'subadmin';
 
   @override
   void initState() {
@@ -80,18 +85,20 @@ class _UserMasterState extends ConsumerState<UserMaster> {
     }
 
     try {
+      final api = ApiService(token: '');
+      final token = api.token;
       final body = {
         "name": name,
         "mobile": mobile,
         "password": password,
         "address": address,
         "active": _isActive,
-        "role": "admin",
+        "role": _selectedRole,
         "permissions": {
-          "userMaster": _accessRights.contains('UserMaster'),
+          "userMaster": _accessRights.contains('userMaster'),
           "scheme": _accessRights.contains('scheme'),
           "stock": _accessRights.contains('stock'),
-          "point": _accessRights.contains('Point'),
+          "point": _accessRights.contains('point'),
           "qr": _accessRights.contains('qr'),
           "news": _accessRights.contains('news'),
           "contractor": _accessRights.contains('contractor'),
@@ -102,24 +109,25 @@ class _UserMasterState extends ConsumerState<UserMaster> {
       };
 
       final response = await http.post(
-        Uri.parse('$userMasterEndpoint'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$baseUrl/api/admin/user-master'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode(body),
       );
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("User saved successfully")),
+        );
+        _fetchUsers();
+      } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("User added successfully")));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Error: ${response.statusCode} - ${response.body}"),
-          ),
-        );
+        ).showSnackBar(SnackBar(content: Text("Failed: ${response.body}")));
       }
     } catch (e) {
-      print("Submit error: $e");
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error: $e")));
@@ -157,6 +165,7 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                           Expanded(
                             child: TextFormField(
                               controller: _fullNameController,
+                              enabled: !isReadOnly,
                               decoration: const InputDecoration(
                                 labelText: 'Full Name',
                                 border: OutlineInputBorder(),
@@ -168,6 +177,7 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                             child: TextFormField(
                               controller: _mobileController,
                               keyboardType: TextInputType.phone,
+                              enabled: !isReadOnly,
                               decoration: const InputDecoration(
                                 labelText: 'Mobile',
                                 border: OutlineInputBorder(),
@@ -183,6 +193,7 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                             child: TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
+                              enabled: !isReadOnly,
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 border: const OutlineInputBorder(),
@@ -192,11 +203,14 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                                         ? Icons.visibility_off
                                         : Icons.visibility,
                                   ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
+                                  onPressed: isReadOnly
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            _obscurePassword =
+                                                !_obscurePassword;
+                                          });
+                                        },
                                 ),
                               ),
                             ),
@@ -206,6 +220,7 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                             child: TextFormField(
                               controller: _confirmPasswordController,
                               obscureText: _obscureConfirmPassword,
+                              enabled: !isReadOnly,
                               decoration: InputDecoration(
                                 labelText: 'Confirm Password',
                                 border: const OutlineInputBorder(),
@@ -215,12 +230,14 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                                         ? Icons.visibility_off
                                         : Icons.visibility,
                                   ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscureConfirmPassword =
-                                          !_obscureConfirmPassword;
-                                    });
-                                  },
+                                  onPressed: isReadOnly
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            _obscureConfirmPassword =
+                                                !_obscureConfirmPassword;
+                                          });
+                                        },
                                 ),
                               ),
                             ),
@@ -230,6 +247,7 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                       const SizedBox(height: 26),
                       TextFormField(
                         controller: _addressController,
+                        enabled: !isReadOnly,
                         decoration: const InputDecoration(
                           labelText: 'Address',
                           border: OutlineInputBorder(),
@@ -238,87 +256,185 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                         maxLines: 4,
                       ),
                       const SizedBox(height: 16),
+                      // Role dropdown
+                      DropdownButtonFormField<String>(
+                        value: _selectedRole,
+                        decoration: const InputDecoration(
+                          labelText: 'Select Role',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'admin',
+                            child: Text('Admin'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'subadmin',
+                            child: Text('Sub Admin'),
+                          ),
+                        ],
+                        onChanged: isReadOnly
+                            ? null
+                            : (val) {
+                                setState(() {
+                                  _selectedRole = val!;
+                                });
+                              },
+                      ),
+                      const SizedBox(height: 16),
                       Expanded(
                         child: ListView(
                           shrinkWrap: true,
                           children: [
                             CheckboxListTile(
-                              title: const Text('userMaster'),
+                              title: const Text('User Master'),
                               value: _accessRights.contains('userMaster'),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _accessRights.add('userMaster');
-                                  } else {
-                                    _accessRights.remove('userMaster');
-                                  }
-                                });
-                              },
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('userMaster');
+                                        } else {
+                                          _accessRights.remove('userMaster');
+                                        }
+                                      });
+                                    },
                             ),
                             CheckboxListTile(
                               title: const Text('Gift Scheme Master'),
                               value: _accessRights.contains('scheme'),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _accessRights.add('scheme');
-                                  } else {
-                                    _accessRights.remove('scheme');
-                                  }
-                                });
-                              },
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('scheme');
+                                        } else {
+                                          _accessRights.remove('scheme');
+                                        }
+                                      });
+                                    },
                             ),
                             CheckboxListTile(
-                              title: const Text('Gift stock Master'),
+                              title: const Text('Gift Stock Master'),
                               value: _accessRights.contains('stock'),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _accessRights.add('stock');
-                                  } else {
-                                    _accessRights.remove('stock');
-                                  }
-                                });
-                              },
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('stock');
+                                        } else {
+                                          _accessRights.remove('stock');
+                                        }
+                                      });
+                                    },
                             ),
                             CheckboxListTile(
                               title: const Text('Point'),
                               value: _accessRights.contains('point'),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _accessRights.add('point');
-                                  } else {
-                                    _accessRights.remove('point');
-                                  }
-                                });
-                              },
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('point');
+                                        } else {
+                                          _accessRights.remove('point');
+                                        }
+                                      });
+                                    },
                             ),
                             CheckboxListTile(
-                              title: const Text('Qr Code Genration'),
+                              title: const Text('QR Code Generation'),
                               value: _accessRights.contains('qr'),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _accessRights.add('qr');
-                                  } else {
-                                    _accessRights.remove('qr');
-                                  }
-                                });
-                              },
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('qr');
+                                        } else {
+                                          _accessRights.remove('qr');
+                                        }
+                                      });
+                                    },
                             ),
                             CheckboxListTile(
-                              title: const Text('Redemption Master'),
-                              value: _accessRights.contains('scheme'),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _accessRights.add('scheme');
-                                  } else {
-                                    _accessRights.remove('scheme');
-                                  }
-                                });
-                              },
+                              title: const Text('News'),
+                              value: _accessRights.contains('news'),
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('news');
+                                        } else {
+                                          _accessRights.remove('news');
+                                        }
+                                      });
+                                    },
+                            ),
+                            CheckboxListTile(
+                              title: const Text('Contractor'),
+                              value: _accessRights.contains('contractor'),
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('contractor');
+                                        } else {
+                                          _accessRights.remove('contractor');
+                                        }
+                                      });
+                                    },
+                            ),
+                            CheckboxListTile(
+                              title: const Text('Wallet'),
+                              value: _accessRights.contains('wallet'),
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('wallet');
+                                        } else {
+                                          _accessRights.remove('wallet');
+                                        }
+                                      });
+                                    },
+                            ),
+                            CheckboxListTile(
+                              title: const Text('Reports'),
+                              value: _accessRights.contains('reports'),
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('reports');
+                                        } else {
+                                          _accessRights.remove('reports');
+                                        }
+                                      });
+                                    },
+                            ),
+                            CheckboxListTile(
+                              title: const Text('Dashboard'),
+                              value: _accessRights.contains('dashboard'),
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _accessRights.add('dashboard');
+                                        } else {
+                                          _accessRights.remove('dashboard');
+                                        }
+                                      });
+                                    },
                             ),
                           ],
                         ),
@@ -335,7 +451,7 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          onPressed: _submitUser,
+                          onPressed: isReadOnly ? null : _submitUser,
                           child: const Text(
                             'Submit',
                             style: TextStyle(
@@ -378,11 +494,13 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                               ),
                             )
                             .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedUser = value;
-                          });
-                        },
+                        onChanged: isReadOnly
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  _selectedUser = value;
+                                });
+                              },
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -400,11 +518,13 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _isActive = true;
-                            });
-                          },
+                          onPressed: isReadOnly
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _isActive = true;
+                                  });
+                                },
                           child: const Text('Active'),
                         ),
                         const SizedBox(width: 16),
@@ -420,11 +540,13 @@ class _UserMasterState extends ConsumerState<UserMaster> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _isActive = false;
-                            });
-                          },
+                          onPressed: isReadOnly
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _isActive = false;
+                                  });
+                                },
                           child: const Text('Inactive'),
                         ),
                       ],

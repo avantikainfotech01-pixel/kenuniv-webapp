@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kenuniv/providers/auth_provider.dart';
 
-class PointMaster extends StatefulWidget {
+class PointMaster extends ConsumerStatefulWidget {
   const PointMaster({super.key});
 
   @override
-  State<PointMaster> createState() => _PointMasterState();
+  ConsumerState<PointMaster> createState() => _PointMasterState();
 }
 
-class _PointMasterState extends State<PointMaster> {
+class _PointMasterState extends ConsumerState<PointMaster> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _pointsController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
@@ -101,6 +103,10 @@ class _PointMasterState extends State<PointMaster> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final canWrite = authState.permissions?['point'] == true;
+    final isReadOnly = !canWrite;
+
     return Scaffold(
       appBar: AppBar(title: const Text("Point Master")),
       body: Padding(
@@ -124,6 +130,7 @@ class _PointMasterState extends State<PointMaster> {
                         return 'Enter a valid number';
                       return null;
                     },
+                    enabled: !isReadOnly,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<Color>(
@@ -141,10 +148,14 @@ class _PointMasterState extends State<PointMaster> {
                           ),
                         )
                         .toList(),
-                    onChanged: (color) =>
-                        setState(() => _selectedColor = color),
+                    onChanged: isReadOnly
+                        ? null
+                        : (color) => setState(() => _selectedColor = color),
                     validator: (value) =>
                         value == null ? 'Select a color' : null,
+                    onSaved: isReadOnly
+                        ? null
+                        : (color) => _selectedColor = color,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -155,10 +166,11 @@ class _PointMasterState extends State<PointMaster> {
                     ),
                     validator: (value) =>
                         value == null || value.isEmpty ? 'Enter code' : null,
+                    enabled: !isReadOnly,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: submitPointMaster,
+                    onPressed: isReadOnly ? null : submitPointMaster,
                     child: const Text('Submit'),
                   ),
                 ],
@@ -183,10 +195,16 @@ class _PointMasterState extends State<PointMaster> {
                             ),
                             title: Text('Points: ${point['points']}'),
                             subtitle: Text('Code: ${point['code']}'),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => deletePointMaster(point['_id']),
-                            ),
+                            trailing: isReadOnly
+                                ? null
+                                : IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
+                                    ),
+                                    onPressed: () =>
+                                        deletePointMaster(point['_id']),
+                                  ),
                           ),
                         );
                       },

@@ -70,7 +70,7 @@ class QrNotifier extends StateNotifier<List<QrData>> {
   }
 
   Future<void> fetchQrs() async {
-    final url = Uri.parse('http://localhost:3000/api/qrs');
+    final url = Uri.parse('http://localhost3000/api/qrs');
     final response = await http.get(url);
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);

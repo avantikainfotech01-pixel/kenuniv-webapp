@@ -15,6 +15,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final token = ref.read(authProvider).token;
+      if (token != null && token.isNotEmpty) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        }
+      }
+    });
+  }
+
   Future<void> login() async {
     final mobile = mobileController.text.trim();
     final password = passwordController.text.trim();
@@ -34,6 +47,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } else {
       final error = ref.read(authProvider).error;
       print("Login failed: $error");
+      final errorMessage = (error == null || error.isEmpty)
+          ? "Server error. Please try again."
+          : error;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> logout() async {
+    ref.read(authProvider.notifier).logout();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 

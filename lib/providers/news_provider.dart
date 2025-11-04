@@ -27,43 +27,48 @@ class NewsNotifier extends StateNotifier<AsyncValue<List<News>>> {
   }
 
   Future<void> addNews({
-    required dynamic imageFile, // File on mobile, Uint8List on web
+    required dynamic mediaFile, // File on mobile, Uint8List on web
     required String title,
     required String description,
+    required String mediaType, // 'image' or 'video'
   }) async {
     try {
       final formData = FormData();
 
       formData.fields
         ..add(MapEntry('title', title))
-        ..add(MapEntry('description', description));
+        ..add(MapEntry('description', description))
+        ..add(MapEntry('mediaType', mediaType));
 
       if (kIsWeb) {
-        // On web, imageFile is Uint8List
         formData.files.add(
           MapEntry(
-            'image',
+            'media',
             MultipartFile.fromBytes(
-              imageFile as Uint8List,
-              filename: 'news_image.jpg',
-              contentType: MediaType('image', 'jpeg'),
+              mediaFile as Uint8List,
+              filename: mediaType == 'video'
+                  ? 'news_video.mp4'
+                  : 'news_image.jpg',
+              contentType: mediaType == 'video'
+                  ? MediaType('video', 'mp4')
+                  : MediaType('image', 'jpeg'),
             ),
           ),
         );
       } else {
-        // On mobile, imageFile is File
         formData.files.add(
           MapEntry(
-            'image',
+            'media',
             await MultipartFile.fromFile(
-              (imageFile as File).path,
-              filename: 'news_image.jpg',
+              (mediaFile as File).path,
+              filename: mediaType == 'video'
+                  ? 'news_video.mp4'
+                  : 'news_image.jpg',
             ),
           ),
         );
       }
 
-      // Use Dio directly for multipart upload
       final dio = Dio();
       await dio.post(
         '$baseUrl/api/admin/news',

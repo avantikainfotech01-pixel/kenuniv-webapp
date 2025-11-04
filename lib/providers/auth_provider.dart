@@ -12,19 +12,37 @@ class AuthState {
   final bool isLoading;
   final String? error;
   final String? token;
+  final Map<String, dynamic>? permissions;
+  final String? role;
 
-  AuthState({this.isLoading = false, this.error, this.token});
+  AuthState({
+    this.isLoading = false,
+    this.error,
+    this.token,
+    this.permissions,
+    this.role,
+  });
 
-  AuthState copyWith({bool? isLoading, String? error, String? token}) {
+  AuthState copyWith({
+    bool? isLoading,
+    String? error,
+    String? token,
+    Map<String, dynamic>? permissions,
+    String? role,
+  }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       token: token ?? this.token,
+      permissions: permissions ?? this.permissions,
+      role: role ?? this.role,
     );
   }
 
   /// Helper getter to access token directly
   String get authToken => token ?? '';
+  String get userRole => role ?? '';
+  bool hasPermission(String key) => permissions?[key] == true;
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -40,9 +58,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
 
       final data = jsonDecode(response.body);
+      // Save token, permissions, role if login succeeds
       if (response.statusCode == 200 && data["token"] != null) {
-        // ✅ store token in state
-        state = state.copyWith(token: data["token"]);
+        final user = data["user"] ?? {};
+        state = state.copyWith(
+          token: data["token"],
+          permissions: Map<String, dynamic>.from(user["permissions"] ?? {}),
+          role: user["role"],
+        );
+        // print('Login: role=${user["role"]}, permissions=${user["permissions"]}');
         return true;
       } else {
         state = state.copyWith(error: data["message"] ?? "Login failed");

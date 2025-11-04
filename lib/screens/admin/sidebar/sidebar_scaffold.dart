@@ -46,7 +46,7 @@ class _SidebarScaffoldState extends State<SidebarScaffold> {
             onItemSelected: (index) {
               setState(() => selectedIndex = index);
             },
-            userName: widget.userName, // dynamic from login
+            userName: widget.userName,
           ),
           Expanded(child: screens[selectedIndex]),
         ],

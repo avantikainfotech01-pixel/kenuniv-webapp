@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kenuniv/screens/auth/login_screen.dart';
 
 class Sliderbar extends StatelessWidget {
   final int selectedIndex;
@@ -37,6 +38,7 @@ class Sliderbar extends StatelessWidget {
           ),
           DrawerListTile(
             title: "Dashboard",
+
             svgSrc: "assets/images/icons/dashboard.png",
             selected: selectedIndex == 0,
             press: () => onItemSelected(0),
@@ -94,6 +96,28 @@ class Sliderbar extends StatelessWidget {
             svgSrc: "assets/images/icons/news.png",
             selected: selectedIndex == 9,
             press: () => onItemSelected(9),
+          ),
+          Spacer(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Color(0xffC02221),
+                minimumSize: Size(double.infinity, 45),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: Icon(Icons.logout),
+              label: Text('Logout'),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
+              },
+            ),
           ),
         ],
       ),

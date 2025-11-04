@@ -3,12 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:kenuniv/core/api_service.dart';
 import 'package:kenuniv/utils/constant.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../providers/qr_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class QrCodeScreen extends ConsumerStatefulWidget {
   const QrCodeScreen({super.key});
@@ -155,6 +157,8 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final canWrite = authState.permissions?['qr'] ?? false;
     return Container(
       color: const Color(0xFFFfffff),
       padding: const EdgeInsets.all(24),
@@ -233,7 +237,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                   vertical: 16,
                 ),
               ),
-              onPressed: _loading ? null : _generateQR,
+              onPressed: (!canWrite || _loading) ? null : _generateQR,
               child: const Text(
                 'Generate QR',
                 style: TextStyle(color: Colors.white),
@@ -579,49 +583,51 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                     vertical: 14,
                   ),
                 ),
-                onPressed: () async {
-                  final start = _activeStartController.text.trim();
-                  final end = _activeEndController.text.trim();
+                onPressed: !canWrite
+                    ? null
+                    : () async {
+                        final start = _activeStartController.text.trim();
+                        final end = _activeEndController.text.trim();
 
-                  if (start.isEmpty || end.isEmpty) return;
+                        if (start.isEmpty || end.isEmpty) return;
 
-                  try {
-                    await ref
-                        .read(qrProvider.notifier)
-                        .activateQrs(
-                          serialFrom: int.parse(start),
-                          serialTo: int.parse(end),
-                        );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('QR Codes activated successfully'),
-                      ),
-                    );
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text('QR Codes Activated'),
-                          content: const Text(
-                            'Selected QR codes have been activated successfully.',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('OK'),
+                        try {
+                          await ref
+                              .read(qrProvider.notifier)
+                              .activateQrs(
+                                serialFrom: int.parse(start),
+                                serialTo: int.parse(end),
+                              );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('QR Codes activated successfully'),
                             ),
-                          ],
-                        );
+                          );
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('QR Codes Activated'),
+                                content: const Text(
+                                  'Selected QR codes have been activated successfully.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Text('OK'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Activation failed: $e')),
+                          );
+                        }
                       },
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Activation failed: $e')),
-                    );
-                  }
-                },
                 child: const Text(
                   'Active',
                   style: TextStyle(color: Colors.white),
@@ -636,49 +642,53 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                     vertical: 14,
                   ),
                 ),
-                onPressed: () async {
-                  final start = _activeStartController.text.trim();
-                  final end = _activeEndController.text.trim();
+                onPressed: !canWrite
+                    ? null
+                    : () async {
+                        final start = _activeStartController.text.trim();
+                        final end = _activeEndController.text.trim();
 
-                  if (start.isEmpty || end.isEmpty) return;
+                        if (start.isEmpty || end.isEmpty) return;
 
-                  try {
-                    await ref
-                        .read(qrProvider.notifier)
-                        .inactivateQrs(
-                          serialFrom: int.parse(start),
-                          serialTo: int.parse(end),
-                        );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('QR Codes inactivated successfully'),
-                      ),
-                    );
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text('QR Codes Inactivated'),
-                          content: const Text(
-                            'Selected QR codes have been inactivated successfully.',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('OK'),
+                        try {
+                          await ref
+                              .read(qrProvider.notifier)
+                              .inactivateQrs(
+                                serialFrom: int.parse(start),
+                                serialTo: int.parse(end),
+                              );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'QR Codes inactivated successfully',
+                              ),
                             ),
-                          ],
-                        );
+                          );
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('QR Codes Inactivated'),
+                                content: const Text(
+                                  'Selected QR codes have been inactivated successfully.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Text('OK'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Inactivation failed: $e')),
+                          );
+                        }
                       },
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Inactivation failed: $e')),
-                    );
-                  }
-                },
                 child: const Text(
                   'Inactive',
                   style: TextStyle(color: Colors.white),
@@ -735,12 +745,68 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                             color: Colors.red,
                           ),
                           tooltip: 'Re-download PDF',
-                          onPressed: () {
+                          onPressed: () async {
+                            final recordId = record['_id'];
+                            final pdfUrl =
+                                "${baseUrl}/qr/qr-history/pdf/$recordId";
+
                             if (kIsWeb) {
-                              final recordId = record['_id'];
-                              final pdfUrl =
-                                  "${baseUrl}/qr/qr-history/pdf/$recordId";
-                              html.window.open(pdfUrl, "_blank");
+                              try {
+                                final response = await html.HttpRequest.request(
+                                  pdfUrl,
+                                  method: 'GET',
+                                  responseType: 'blob',
+                                );
+
+                                if (response.status == 200) {
+                                  final blob = response.response as html.Blob;
+                                  final url = html.Url.createObjectUrlFromBlob(
+                                    blob,
+                                  );
+
+                                  final anchor = html.AnchorElement(href: url)
+                                    ..download = 'qr_history.pdf'
+                                    ..click();
+
+                                  html.Url.revokeObjectUrl(url);
+                                } else {
+                                  print('HTTP Error: ${response.status}');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Failed to download PDF (Status ${response.status})',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                print('Error downloading PDF: $e');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Download failed — check CORS or server headers.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            } else {
+                              // For mobile/desktop builds
+                              final resp = await http.get(Uri.parse(pdfUrl));
+                              if (resp.statusCode == 200) {
+                                final bytes = resp.bodyBytes;
+                                await Printing.sharePdf(
+                                  bytes: bytes,
+                                  filename: 'qr_history_${recordId}.pdf',
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Failed to download PDF (${resp.statusCode})',
+                                    ),
+                                  ),
+                                );
+                              }
                             }
                           },
                         ),
