@@ -28,7 +28,7 @@ class Sliderbar extends ConsumerWidget {
               children: [
                 Image.asset("assets/images/icons/user.png"),
                 Text(
-                  userName,
+                  "Admin",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,

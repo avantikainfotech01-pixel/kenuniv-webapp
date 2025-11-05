@@ -7,33 +7,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SharedPreferences.getInstance(); // ensure registration
+  final prefs = await SharedPreferences.getInstance();
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(ProviderScope(child: MyApp(prefs: prefs)));
 }
 
 class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
+  final SharedPreferences prefs;
+  const MyApp({super.key, required this.prefs});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
     final authNotifier = ref.read(authProvider.notifier);
+    authNotifier.loadAuthData(); // Load once
 
-    // ✅ Load saved session (token, permissions, role)
-    authNotifier.loadAuthData();
-
-    Widget homeScreen;
-    if (authState.token != null && authState.token!.isNotEmpty) {
-      homeScreen = SidebarScaffold(userName: authState.userRole ?? "Admin");
-    } else {
-      homeScreen = const LoginScreen();
-    }
+    final authState = ref.watch(authProvider);
+    final homeScreen = (authState.token?.isNotEmpty ?? false)
+        ? SidebarScaffold(userName: authState.userRole ?? "Admin")
+        : const LoginScreen();
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Admin Panel',
       theme: ThemeData(primarySwatch: Colors.red),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/dashboard': (context) =>
+            SidebarScaffold(userName: authState.userRole ?? "Admin"),
+      },
       home: homeScreen,
     );
   }
