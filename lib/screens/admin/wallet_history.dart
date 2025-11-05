@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:intl/intl.dart';
+import 'package:kenuniv/models/wallet_model.dart';
 
 class WalletHistory extends StatefulWidget {
   const WalletHistory({super.key});
@@ -8,136 +12,123 @@ class WalletHistory extends StatefulWidget {
 }
 
 class _WalletHistoryState extends State<WalletHistory> {
+  Future<List<WalletHistoryModel>> fetchWalletHistory() async {
+    final response = await http.get(
+      Uri.parse('http://api.kenuniv.com/api/wallet/all-history'),
+    );
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      final List<dynamic> data = responseData['data'];
+      return data.map((item) => WalletHistoryModel.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to load wallet history');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Prepare dummy data for static table, ready for dynamic usage
-    final List<Map<String, String>> data = [
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "1200 Pts",
-      },
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "100 Pts",
-      },
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "1300 Pts",
-      },
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "1400 Pts",
-      },
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "300 Pts",
-      },
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "1600 Pts",
-      },
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "200 Pts",
-      },
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "400 Pts",
-      },
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "310 Pts",
-      },
-      {
-        "qr": "0121230314",
-        "product": "Tshirt",
-        "redeemedBy": "User Name",
-        "date": "02/09/2025 (09:00 PM)",
-        "points": "3120 Pts",
-      },
-    ];
     return Scaffold(
       appBar: AppBar(title: const Text("Wallet History")),
-      body: SizedBox(
-        width: double.infinity,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(Colors.grey[200]),
-          columns: const [
-            DataColumn(
-              label: Text("No.", style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            DataColumn(
-              label: Text(
-                "QR No.",
-                style: TextStyle(fontWeight: FontWeight.bold),
+      body: FutureBuilder<List<WalletHistoryModel>>(
+        future: fetchWalletHistory(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No History Yet found'));
+          } else {
+            final data = snapshot.data!;
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowColor: MaterialStateProperty.all(Colors.grey[200]),
+                columns: const [
+                  DataColumn(
+                    label: Text(
+                      "No.",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      "User Name",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      "Mobile",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      "Type",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      "Points",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      "Balance After",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      "Description",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      "Date",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+                rows: List.generate(data.length, (index) {
+                  final item = data[index];
+                  final type = item.type.toLowerCase();
+                  final typeColor = type == 'credit'
+                      ? Colors.green
+                      : (type == 'debit' ? Colors.red : Colors.black);
+                  return DataRow(
+                    cells: [
+                      DataCell(Text("${index + 1}")),
+                      DataCell(Text(item.userName)),
+                      DataCell(Text(item.userMobile)),
+                      DataCell(
+                        Text(
+                          item.type,
+                          style: TextStyle(
+                            color: typeColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      DataCell(Text(item.points.toString())),
+                      DataCell(Text(item.balanceAfter.toString())),
+                      DataCell(Text(item.description)),
+                      DataCell(
+                        Text(
+                          DateFormat('dd MMM yyyy, hh:mm a').format(item.date),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
               ),
-            ),
-            DataColumn(
-              label: Text(
-                "Product Name",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                "Redeemed By",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                "Redemption Date",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                "Redeemed Points",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-          rows: List.generate(data.length, (index) {
-            final item = data[index];
-            return DataRow(
-              cells: [
-                DataCell(Text("${index + 1}")),
-                DataCell(Text(item["qr"] ?? "")),
-                DataCell(Text(item["product"] ?? "")),
-                DataCell(Text(item["redeemedBy"] ?? "")),
-                DataCell(Text(item["date"] ?? "")),
-                DataCell(Text(item["points"] ?? "")),
-              ],
             );
-          }),
-        ),
+          }
+        },
       ),
     );
   }

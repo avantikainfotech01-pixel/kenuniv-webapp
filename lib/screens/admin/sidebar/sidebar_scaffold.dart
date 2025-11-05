@@ -30,8 +30,8 @@ class _SidebarScaffoldState extends State<SidebarScaffold> {
     StockMaster(),
     PointMaster(),
     QrCodeScreen(),
-    WalletHistory(),
     RedemptionHistory(),
+    WalletHistory(),
     ContractorList(),
     NewsUpdate(),
   ];

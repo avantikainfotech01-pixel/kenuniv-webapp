@@ -12,7 +12,7 @@ class QrNotifier extends StateNotifier<List<QrData>> {
     required int serialTo,
     required int points,
   }) async {
-    final url = Uri.parse('http://localhost:3000/api/generate-qrs');
+    final url = Uri.parse('http://api.kenuniv.com/api/generate-qrs');
 
     final response = await http.post(
       url,
@@ -39,7 +39,7 @@ class QrNotifier extends StateNotifier<List<QrData>> {
     required int serialFrom,
     required int serialTo,
   }) async {
-    final url = Uri.parse('http://localhost:3000/api/activate-qr');
+    final url = Uri.parse('http://api.kenuniv.com/api/activate-qr');
 
     final response = await http.post(
       url,
@@ -56,7 +56,7 @@ class QrNotifier extends StateNotifier<List<QrData>> {
     required int serialFrom,
     required int serialTo,
   }) async {
-    final url = Uri.parse('http://localhost:3000/api/deactivate-qr');
+    final url = Uri.parse('http://api.kenuniv.com/api/deactivate-qr');
 
     final response = await http.post(
       url,
@@ -70,7 +70,7 @@ class QrNotifier extends StateNotifier<List<QrData>> {
   }
 
   Future<void> fetchQrs() async {
-    final url = Uri.parse('http://localhost3000/api/qrs');
+    final url = Uri.parse('http://api.kenuniv.com/api/qrs');
     final response = await http.get(url);
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
@@ -83,7 +83,7 @@ class QrNotifier extends StateNotifier<List<QrData>> {
   }
 
   Future<List<QrData>> fetchQrHistory() async {
-    final url = Uri.parse('http://localhost:3000/api/qr-history');
+    final url = Uri.parse('http://api.kenuniv.com/api/qr-history');
     final response = await http.get(url);
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
@@ -102,7 +102,7 @@ final qrProvider = StateNotifierProvider<QrNotifier, List<QrData>>((ref) {
 
 /// Provider to fetch QR stats (activated, inactivated) from API
 final qrStatsProvider = FutureProvider<Map<String, int>>((ref) async {
-  final url = Uri.parse('http://localhost:3000/api/qr-stats');
+  final url = Uri.parse('http://api.kenuniv.com/api/qr-stats');
   final response = await http.get(url);
   if (response.statusCode == 200) {
     final jsonData = json.decode(response.body);
