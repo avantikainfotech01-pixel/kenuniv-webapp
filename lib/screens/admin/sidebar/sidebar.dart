@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kenuniv/screens/auth/login_screen.dart';
+import 'package:kenuniv/providers/auth_provider.dart';
 
-class Sliderbar extends StatelessWidget {
+class Sliderbar extends ConsumerWidget {
   final int selectedIndex;
   final Function(int) onItemSelected;
   final String userName;
@@ -14,7 +16,7 @@ class Sliderbar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: 280,
 
@@ -112,9 +114,11 @@ class Sliderbar extends StatelessWidget {
               icon: Icon(Icons.logout),
               label: Text('Logout'),
               onPressed: () {
-                Navigator.pushReplacement(
+                ref.read(authProvider.notifier).logout();
+                Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => LoginScreen()),
+                  (route) => false,
                 );
               },
             ),

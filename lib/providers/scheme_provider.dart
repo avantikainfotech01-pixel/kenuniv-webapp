@@ -89,22 +89,34 @@ class SchemeNotifier extends StateNotifier<AsyncValue<List<Scheme>>> {
 
   Future<void> activateScheme(String id) async {
     try {
-      await apiService.patchRequest('$baseUrl/api/admin/schemes/$id/status', {
-        'status': 'active',
-      });
+      final dio = Dio();
+      final response = await dio.patch(
+        '$baseUrl/api/admin/schemes/$id/status',
+        data: {'status': 'active'},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+
+      print('Activate response: ${response.data}');
       await fetchSchemes();
     } catch (e, st) {
+      print('Activate error: $e');
       state = AsyncValue.error(e, st);
     }
   }
 
   Future<void> deactivateScheme(String id) async {
     try {
-      await apiService.patchRequest('$baseUrl/api/admin/schemes/$id/status', {
-        'status': 'inactive',
-      });
+      final dio = Dio();
+      final response = await dio.patch(
+        '$baseUrl/api/admin/schemes/$id/status',
+        data: {'status': 'inactive'},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+
+      print('Deactivate response: ${response.data}');
       await fetchSchemes();
     } catch (e, st) {
+      print('Deactivate error: $e');
       state = AsyncValue.error(e, st);
     }
   }

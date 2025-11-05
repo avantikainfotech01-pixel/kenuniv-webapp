@@ -25,7 +25,6 @@ class _SchemeMasterState extends ConsumerState<SchemeMaster> {
   @override
   void initState() {
     super.initState();
-    // 🔹 Fetch schemes when screen loads
     Future.microtask(() => ref.read(schemeProvider.notifier).fetchSchemes());
   }
 
