@@ -27,7 +27,7 @@ class NewsNotifier extends StateNotifier<AsyncValue<List<News>>> {
   }
 
   Future<void> addNews({
-    required dynamic mediaFile, // File on mobile, Uint8List on web
+    required dynamic mediaFile, // File (mobile) or Uint8List (web)
     required String title,
     required String description,
     required String mediaType, // 'image' or 'video'
@@ -41,6 +41,7 @@ class NewsNotifier extends StateNotifier<AsyncValue<List<News>>> {
         ..add(MapEntry('mediaType', mediaType));
 
       if (kIsWeb) {
+        // ✅ Handle web upload (Uint8List)
         formData.files.add(
           MapEntry(
             'media',
@@ -56,6 +57,7 @@ class NewsNotifier extends StateNotifier<AsyncValue<List<News>>> {
           ),
         );
       } else {
+        // ✅ Handle mobile upload (File)
         formData.files.add(
           MapEntry(
             'media',
@@ -69,20 +71,36 @@ class NewsNotifier extends StateNotifier<AsyncValue<List<News>>> {
         );
       }
 
-      final dio = Dio();
-      await dio.post(
-        '$baseUrl/api/admin/news',
-        data: formData,
-        options: Options(
+      // ✅ Configure Dio for CORS-safe uploads
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: const Duration(seconds: 20),
+          receiveTimeout: const Duration(seconds: 20),
           headers: {
-            'Authorization': 'Bearer ${apiService.token}',
-            'Content-Type': 'multipart/form-data',
+            'Accept': '*/*',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
           },
         ),
       );
 
+      final response = await dio.post(
+        '/api/admin/news',
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+
+      print("✅ Upload success: ${response.data}");
       await fetchNews();
+    } on DioException catch (dioErr) {
+      print("❌ Dio Error: ${dioErr.message}");
+      if (dioErr.response != null) {
+        print("Server response: ${dioErr.response?.data}");
+      }
+      state = AsyncValue.error(dioErr, StackTrace.current);
     } catch (e, st) {
+      print("❌ General Error: $e");
       state = AsyncValue.error(e, st);
     }
   }
