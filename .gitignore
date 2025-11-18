@@ -1,0 +1,16 @@
+# Flutter / Dart / Node Ignore
+build/
+.android/
+.ios/
+.macos/
+.web/
+.flutter-*
+.dart_tool/
+packages/
+node_modules/
+pubspec.lock
+
+# System
+.DS_Store
+.idea/
+.vscode/
