@@ -1,39 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kenuniv/providers/qr_provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 // Riverpod providers (mocked)
-final remainingStockProvider = Provider<int>((ref) => 8640);
-final contractorCountProvider = Provider<int>((ref) => 130);
-final walletAmountProvider = Provider<int>((ref) => 10568);
-final redemptionAmountProvider = Provider<int>((ref) => 6485);
+final dashboardStatsProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
+  final response = await http.get(
+    Uri.parse("http://api.kenuniv.com/api/wallet/admin/dashboard-stats"),
+  );
 
-final locationDataProvider = Provider<List<Map<String, dynamic>>>(
-  (ref) => [
-    {'location': 'AMD', 'count': 17},
-    {'location': 'BRD', 'count': 20},
-    {'location': 'SRT', 'count': 16},
-    {'location': 'GNR', 'count': 4},
-    {'location': 'VDR', 'count': 10},
-    {'location': 'SND', 'count': 15},
-    {'location': 'BVN', 'count': 10},
-    {'location': 'VGM', 'count': 15},
-    {'location': 'RJT', 'count': 11},
-    {'location': 'MRB', 'count': 21},
-  ],
-);
+  if (response.statusCode == 200) {
+    final body = jsonDecode(response.body);
+    return body['data'];
+  } else {
+    print("Failed to load dashboard stats: ${response.statusCode}");
+    return {
+      "remainingStock": 0,
+      "totalUsers": 0,
+      "walletAmount": 0,
+      "redemptionAmount": 0,
+    };
+  }
+});
+
+final locationDataProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  final response = await http.get(
+    Uri.parse("http://api.kenuniv.com/api/location-stats"),
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return List<Map<String, dynamic>>.from(data['data']);
+  } else {
+    return [];
+  }
+});
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final remainingStock = ref.watch(remainingStockProvider);
-    final contractorCount = ref.watch(contractorCountProvider);
-    final walletAmount = ref.watch(walletAmountProvider);
-    final redemptionAmount = ref.watch(redemptionAmountProvider);
+    final statsAsync = ref.watch(dashboardStatsProvider);
     final qrStats = ref.watch(qrStatsProvider);
-    final locationData = ref.watch(locationDataProvider);
+    final locationDataAsync = ref.watch(locationDataProvider);
 
     return Scaffold(
       body: Row(
@@ -60,35 +75,39 @@ class DashboardScreen extends ConsumerWidget {
                       ],
                     ),
                     // Overview cards
-                    Wrap(
-                      spacing: 24,
-                      runSpacing: 24,
-                      children: [
-                        _DashboardCard(
-                          color: Colors.blue,
-                          icon: Icons.inventory_2,
-                          title: 'Remaining Stock',
-                          value: remainingStock.toString(),
-                        ),
-                        _DashboardCard(
-                          color: Colors.orange,
-                          icon: Icons.people_alt,
-                          title: 'No. of Contractor',
-                          value: contractorCount.toString(),
-                        ),
-                        _DashboardCard(
-                          color: Colors.green,
-                          icon: Icons.account_balance_wallet,
-                          title: 'Wallet Amount',
-                          value: walletAmount.toString(),
-                        ),
-                        _DashboardCard(
-                          color: Colors.purple,
-                          icon: Icons.redeem,
-                          title: 'Redemption Amount',
-                          value: redemptionAmount.toString(),
-                        ),
-                      ],
+                    statsAsync.when(
+                      data: (stats) => Wrap(
+                        spacing: 24,
+                        runSpacing: 24,
+                        children: [
+                          _DashboardCard(
+                            color: Colors.blue,
+                            icon: Icons.inventory_2,
+                            title: 'Remaining Stock',
+                            value: stats["remainingStock"].toString(),
+                          ),
+                          _DashboardCard(
+                            color: Colors.orange,
+                            icon: Icons.people_alt,
+                            title: 'No. of Contractor',
+                            value: stats["totalUsers"].toString(),
+                          ),
+                          _DashboardCard(
+                            color: Colors.green,
+                            icon: Icons.account_balance_wallet,
+                            title: 'Wallet Amount',
+                            value: stats["walletAmount"].toString(),
+                          ),
+                          _DashboardCard(
+                            color: Colors.purple,
+                            icon: Icons.redeem,
+                            title: 'Redemption Amount',
+                            value: stats["redemptionAmount"].toString(),
+                          ),
+                        ],
+                      ),
+                      loading: () => CircularProgressIndicator(),
+                      error: (e, st) => Text("Failed to load stats"),
                     ),
                     const SizedBox(height: 40),
                     // Bar chart and Donut chart
@@ -124,8 +143,14 @@ class DashboardScreen extends ConsumerWidget {
                                 SizedBox(
                                   height: 240,
                                   child: Center(
-                                    child: _LocationBarChart(
-                                      data: locationData,
+                                    child: locationDataAsync.when(
+                                      data: (data) =>
+                                          _LocationBarChart(data: data),
+                                      loading: () => Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                      error: (e, st) =>
+                                          Text("Failed to load location stats"),
                                     ),
                                   ),
                                 ),
