@@ -68,12 +68,6 @@ class _RedemptionHistoryState extends State<RedemptionHistory> {
                     ),
                     DataColumn(
                       label: Text(
-                        "QR No.",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
                         "Product Name",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
@@ -92,6 +86,12 @@ class _RedemptionHistoryState extends State<RedemptionHistory> {
                     ),
                     DataColumn(
                       label: Text(
+                        "Mobile No.",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
                         "Redemption Date",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
@@ -102,27 +102,84 @@ class _RedemptionHistoryState extends State<RedemptionHistory> {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
+                    DataColumn(
+                      label: Text(
+                        "Status",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Action",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                   rows: List.generate(redemptionList.length, (index) {
                     final item = redemptionList[index];
-                    final qr = item['qrSerial'] ?? "-";
                     final product =
                         item['schemeId']?['productName'] ??
                         item['schemeId']?['schemeName'] ??
                         "";
                     final user = item['userId']?['name'] ?? "";
+                    final mobile = item['userId']?['mobile'] ?? "";
                     final date = formatDate(item['createdAt'] ?? "");
                     final pts = item['pointsUsed']?.toString() ?? "0";
+                    final status = item['status'] ?? "pending";
 
                     return DataRow(
                       cells: [
                         DataCell(Text("${index + 1}")),
-                        DataCell(Text(qr)),
                         DataCell(Text(product)),
                         DataCell(const Text("1")),
                         DataCell(Text(user)),
+                        DataCell(Text(mobile)),
                         DataCell(Text(date)),
-                        DataCell(Text("$pts Pts")),
+                        DataCell(Text("$pts Points")),
+                        DataCell(Text(status)),
+                        DataCell(
+                          status == "pending"
+                              ? ElevatedButton(
+                                  onPressed: () async {
+                                    try {
+                                      final res = await http.patch(
+                                        Uri.parse(
+                                          "http://api.kenuniv.com/api/wallet/redeem-history/${item['_id']}/approve",
+                                        ),
+                                      );
+                                      final body = jsonDecode(res.body);
+                                      if (body['success'] == true) {
+                                        setState(() {
+                                          redemptionList[index]['status'] =
+                                              "approved";
+                                        });
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              body['message'] ??
+                                                  "Failed to approve",
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      print("Error approving redemption: $e");
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text("Server error"),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: const Text("Approve"),
+                                )
+                              : const Text("Approved"),
+                        ),
                       ],
                     );
                   }),
