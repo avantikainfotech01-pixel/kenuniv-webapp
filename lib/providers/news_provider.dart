@@ -1,62 +1,77 @@
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' hide MultipartFile;
-import 'package:kenuniv/core/api_service.dart';
-import 'package:kenuniv/utils/constant.dart';
-import '../models/news_model.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
-import 'package:http_parser/http_parser.dart';
+import 'dart:typed_data';
+import 'package:dio/browser.dart' show BrowserHttpClientAdapter;
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../utils/constant.dart';
 
-class NewsNotifier extends StateNotifier<AsyncValue<List<News>>> {
-  final ApiService apiService;
-  NewsNotifier(this.apiService) : super(const AsyncValue.loading()) {
+final newsProvider =
+    StateNotifierProvider<NewsNotifier, List<Map<String, dynamic>>>(
+      (ref) => NewsNotifier(ref),
+    );
+
+class NewsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
+  final Ref ref;
+  late Dio dio;
+
+  NewsNotifier(this.ref) : super([]) {
+    dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        // ❌ DO NOT SET content-type here for multipart on web
+        headers: {'Accept': '*/*'},
+        sendTimeout: const Duration(minutes: 5),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
+    );
+
+    if (kIsWeb) {
+      dio.httpClientAdapter = BrowserHttpClientAdapter();
+    }
+
     fetchNews();
   }
 
+  // --------------------- FETCH NEWS ------------------------
   Future<void> fetchNews() async {
-    state = const AsyncValue.loading();
     try {
-      final response = await apiService.getRequest('$baseUrl/api/admin/news');
-      final List<dynamic> data = response['news'] ?? [];
-      final newsList = data.map((e) => News.fromJson(e)).toList();
-      state = AsyncValue.data(newsList.cast<News>());
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      final res = await dio.get('/api/admin/news');
+      if (res.data['success'] == true) {
+        state = List<Map<String, dynamic>>.from(res.data['news']);
+      }
+    } catch (e) {
+      print("Fetch News Error: $e");
     }
   }
 
+  // --------------------- ADD NEWS ------------------------
   Future<void> addNews({
-    required dynamic mediaFile, // File (mobile) or Uint8List (web)
+    required dynamic mediaFile, // Uint8List for web
+    required String mediaType,
     required String title,
     required String description,
-    required String mediaType, // 'image' or 'video'
+    Function(int, int)? onProgress,
   }) async {
     try {
       final formData = FormData();
 
-      formData.fields
-        ..add(MapEntry('title', title))
-        ..add(MapEntry('description', description))
-        ..add(MapEntry('mediaType', mediaType));
-
+      // WEB UPLOAD (Uint8List)
       if (kIsWeb) {
-        // ✅ Handle web upload (Uint8List)
         formData.files.add(
           MapEntry(
             'media',
             MultipartFile.fromBytes(
-              mediaFile as Uint8List,
+              mediaFile,
               filename: mediaType == 'video'
                   ? 'news_video.mp4'
                   : 'news_image.jpg',
-              contentType: mediaType == 'video'
-                  ? MediaType('video', 'mp4')
-                  : MediaType('image', 'jpeg'),
+              // ❌ DO NOT SET contentType
             ),
           ),
         );
       } else {
+        // MOBILE UPLOAD
         formData.files.add(
           MapEntry(
             'media',
@@ -70,51 +85,57 @@ class NewsNotifier extends StateNotifier<AsyncValue<List<News>>> {
         );
       }
 
-      // ✅ Configure Dio for CORS-safe uploads
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 20),
-          receiveTimeout: const Duration(seconds: 20),
-          headers: {
-            'Accept': '*/*',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          },
-        ),
-      );
+      formData.fields.add(MapEntry('title', title));
+      formData.fields.add(MapEntry('description', description));
+      formData.fields.add(MapEntry('mediaType', mediaType));
 
-      final response = await dio.post(
+      final res = await dio.post(
         '/api/admin/news',
         data: formData,
-        options: Options(contentType: 'multipart/form-data'),
+        // ❌ Do NOT manually set content-type; browser will break
+        options: Options(
+          validateStatus: (status) => status != null && status < 600,
+        ),
+        onSendProgress: onProgress,
       );
 
-      print("✅ Upload success: ${response.data}");
-      await fetchNews();
-    } on DioException catch (dioErr) {
-      print("❌ Dio Error: ${dioErr.message}");
-      if (dioErr.response != null) {
-        print("Server response: ${dioErr.response?.data}");
+      if (res.data['success'] == true) {
+        await fetchNews();
+      } else {
+        throw res.data['message'] ?? "Upload failed";
       }
-      state = AsyncValue.error(dioErr, StackTrace.current);
-    } catch (e, st) {
-      print("❌ General Error: $e");
-      state = AsyncValue.error(e, st);
+    } catch (e) {
+      print("Upload Error => $e");
+      rethrow;
     }
   }
 
+  // --------------------- DELETE NEWS ------------------------
   Future<void> deleteNews(String id) async {
     try {
-      await apiService.deleteRequest('$baseUrl/api/admin/news/$id');
+      await dio.delete('/api/admin/news/$id');
       await fetchNews();
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+    } catch (e) {
+      print("Delete error: $e");
+    }
+  }
+
+  // ---------------- reorder local (UI only) ----------------
+  Future<void> reorderLocal(int oldIndex, int newIndex) async {
+    final list = [...state];
+    final item = list.removeAt(oldIndex);
+    list.insert(newIndex, item);
+    state = list;
+  }
+
+  // move to top
+  Future<void> moveToTop(String id) async {
+    final list = [...state];
+    final index = list.indexWhere((e) => e['_id'] == id);
+    if (index > 0) {
+      final item = list.removeAt(index);
+      list.insert(0, item);
+      state = list;
     }
   }
 }
-
-final newsProvider =
-    StateNotifierProvider<NewsNotifier, AsyncValue<List<News>>>(
-      (ref) => NewsNotifier(ApiService(token: "")),
-    );
