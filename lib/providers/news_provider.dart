@@ -66,7 +66,6 @@ class NewsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
               filename: mediaType == 'video'
                   ? 'news_video.mp4'
                   : 'news_image.jpg',
-              // ❌ DO NOT SET contentType
             ),
           ),
         );
@@ -92,7 +91,6 @@ class NewsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
       final res = await dio.post(
         '/api/admin/news',
         data: formData,
-        // ❌ Do NOT manually set content-type; browser will break
         options: Options(
           validateStatus: (status) => status != null && status < 600,
         ),

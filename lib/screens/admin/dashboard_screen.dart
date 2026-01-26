@@ -9,7 +9,7 @@ final dashboardStatsProvider = FutureProvider<Map<String, dynamic>>((
   ref,
 ) async {
   final response = await http.get(
-    Uri.parse("http://api.kenuniv.com/api/wallet/admin/dashboard-stats"),
+    Uri.parse("http://api.kenuniv.com/api/wallet/wallet/admin/dashboard-stats"),
   );
 
   if (response.statusCode == 200) {
@@ -43,194 +43,154 @@ final locationDataProvider = FutureProvider<List<Map<String, dynamic>>>((
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(dashboardStatsProvider);
     final qrStats = ref.watch(qrStatsProvider);
     final locationDataAsync = ref.watch(locationDataProvider);
 
-    return Scaffold(
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    //Header
-                    Row(
-                      children: [
-                        Text(
-                          "Overview",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Overview cards
-                    statsAsync.when(
-                      data: (stats) => Wrap(
-                        spacing: 24,
-                        runSpacing: 24,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isSmall = constraints.maxWidth < 1200;
+
+        return Scaffold(
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Text(
+                  "Overview",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Responsive Cards
+                statsAsync.when(
+                  data: (stats) => Wrap(
+                    spacing: 24,
+                    runSpacing: 24,
+                    children: [
+                      _DashboardCard(
+                        color: Colors.blue,
+                        icon: Icons.inventory_2,
+                        title: 'Remaining Stock',
+                        value: stats["remainingStock"].toString(),
+                      ),
+                      _DashboardCard(
+                        color: Colors.orange,
+                        icon: Icons.people_alt,
+                        title: 'No. of Contractor',
+                        value: stats["totalUsers"].toString(),
+                      ),
+                      _DashboardCard(
+                        color: Colors.green,
+                        icon: Icons.account_balance_wallet,
+                        title: 'Wallet Amount',
+                        value: stats["walletAmount"].toString(),
+                      ),
+                      _DashboardCard(
+                        color: Colors.purple,
+                        icon: Icons.redeem,
+                        title: 'Redemption Amount',
+                        value: stats["redemptionAmount"].toString(),
+                      ),
+                    ],
+                  ),
+                  loading: () => CircularProgressIndicator(),
+                  error: (e, st) => Text("Failed to load stats"),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Charts responsive Row → Column
+                isSmall
+                    ? Column(
                         children: [
-                          _DashboardCard(
-                            color: Colors.blue,
-                            icon: Icons.inventory_2,
-                            title: 'Remaining Stock',
-                            value: stats["remainingStock"].toString(),
+                          _locationChart(context, locationDataAsync),
+                          const SizedBox(height: 32),
+                          _qrChart(context, qrStats),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _locationChart(context, locationDataAsync),
                           ),
-                          _DashboardCard(
-                            color: Colors.orange,
-                            icon: Icons.people_alt,
-                            title: 'No. of Contractor',
-                            value: stats["totalUsers"].toString(),
-                          ),
-                          _DashboardCard(
-                            color: Colors.green,
-                            icon: Icons.account_balance_wallet,
-                            title: 'Wallet Amount',
-                            value: stats["walletAmount"].toString(),
-                          ),
-                          _DashboardCard(
-                            color: Colors.purple,
-                            icon: Icons.redeem,
-                            title: 'Redemption Amount',
-                            value: stats["redemptionAmount"].toString(),
-                          ),
+                          const SizedBox(width: 32),
+                          Expanded(child: _qrChart(context, qrStats)),
                         ],
                       ),
-                      loading: () => CircularProgressIndicator(),
-                      error: (e, st) => Text("Failed to load stats"),
-                    ),
-                    const SizedBox(height: 40),
-                    // Bar chart and Donut chart
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Bar Chart (Location-wise contractor)
-                        Expanded(
-                          flex: 1,
-                          child: Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Location-wise Contractor',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                  textAlign: TextAlign.end,
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  height: 240,
-                                  child: Center(
-                                    child: locationDataAsync.when(
-                                      data: (data) =>
-                                          _LocationBarChart(data: data),
-                                      loading: () => Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                      error: (e, st) =>
-                                          Text("Failed to load location stats"),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 32),
-                        // Donut Chart (QR Stats)
-                        Expanded(
-                          flex: 1,
-                          child: Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: qrStats.when(
-                              data: (qrStatsData) => Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'QR Stats',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  SizedBox(
-                                    height: 200,
-                                    child: _QRDonutChart(qrStats: qrStatsData),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      _DonutLegend(
-                                        color: Colors.green,
-                                        label: 'Activated QR',
-                                        value: qrStatsData['active'].toString(),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      _DonutLegend(
-                                        color: Colors.red,
-                                        label: 'Inactivated QR',
-                                        value: qrStatsData['inactive']
-                                            .toString(),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              loading: () => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                              error: (e, st) => Center(
-                                child: Text('Failed to load QR stats'),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+
+  Widget _locationChart(
+    BuildContext context,
+    AsyncValue<List<Map<String, dynamic>>> data,
+  ) => Container(
+    padding: const EdgeInsets.all(24),
+    decoration: _cardDecoration(),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Location-wise Contractor',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 240,
+          child: data.when(
+            data: (v) => _LocationBarChart(data: v),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, st) => Text("Error loading data"),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _qrChart(BuildContext context, AsyncValue<Map<String, int>> qrStats) =>
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: _cardDecoration(),
+        child: qrStats.when(
+          data: (v) => Column(
+            children: [
+              Text(
+                'QR Stats',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(height: 200, child: _QRDonutChart(qrStats: v)),
+            ],
+          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, st) => Text('Failed to load QR stats'),
+        ),
+      );
+
+  BoxDecoration _cardDecoration() => BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(16),
+    boxShadow: [
+      BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
+    ],
+  );
 }
 
 // Dashboard overview card widget

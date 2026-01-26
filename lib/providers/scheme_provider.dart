@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
@@ -9,56 +9,55 @@ import '../models/scheme_model.dart';
 
 class SchemeNotifier extends StateNotifier<AsyncValue<List<Scheme>>> {
   final ApiService apiService;
+
   SchemeNotifier(this.apiService) : super(const AsyncValue.loading()) {
     fetchSchemes();
   }
 
+  // ---------------- FETCH ----------------
   Future<void> fetchSchemes() async {
-    state = const AsyncValue.loading();
     try {
+      state = const AsyncValue.loading();
       final response = await apiService.getRequest(
         '$baseUrl/api/admin/fetch-schemes',
       );
-      final List<dynamic> data = response['data'] ?? [];
+
+      final List data = response['data'] ?? [];
       final schemes = data.map((e) => Scheme.fromJson(e)).toList();
-      state = AsyncValue.data(schemes.cast<Scheme>());
+
+      state = AsyncValue.data(schemes);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
+  // ---------------- ADD ----------------
   Future<void> addScheme({
-    required Uint8List imageBytes,
+    required dynamic imageData, // Uint8List (web) OR File (mobile)
     required String schemeName,
     required String productName,
     required int points,
   }) async {
     try {
-      final formData = FormData();
-      formData.fields.addAll([
-        MapEntry('schemeName', schemeName),
-        MapEntry('productName', productName),
-        MapEntry('points', points.toString()),
-        MapEntry('status', 'active'),
-      ]);
-
-      formData.files.add(
-        MapEntry(
-          'image',
-          kIsWeb
-              ? MultipartFile.fromBytes(
-                  imageBytes,
-                  filename: 'scheme_image.jpg',
-                  contentType: MediaType('image', 'jpeg'),
-                )
-              : await MultipartFile.fromFile(
-                  (imageBytes as File).path,
-                  filename: 'scheme_image.jpg',
-                ),
-        ),
-      );
-
       final dio = Dio();
+
+      final formData = FormData.fromMap({
+        'schemeName': schemeName,
+        'productName': productName,
+        'points': points.toString(),
+        'status': 'active',
+        'image': kIsWeb
+            ? MultipartFile.fromBytes(
+                imageData as Uint8List,
+                filename: 'scheme.jpg',
+                contentType: MediaType('image', 'jpeg'),
+              )
+            : await MultipartFile.fromFile(
+                (imageData as File).path,
+                filename: 'scheme.jpg',
+              ),
+      });
+
       await dio.post(
         '$baseUrl/api/admin/schemes',
         data: formData,
@@ -71,50 +70,50 @@ class SchemeNotifier extends StateNotifier<AsyncValue<List<Scheme>>> {
     }
   }
 
+  // ---------------- DELETE ----------------
   Future<void> deleteScheme(String id) async {
     try {
-      await apiService.deleteRequest('$baseUrl/api/admin/schemes/$id');
+      await apiService.deleteRequest('/api/admin/schemes/$id');
       await fetchSchemes();
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+    } catch (e) {
+      debugPrint('Delete scheme failed: $e');
     }
   }
 
+  // ---------------- ACTIVATE ----------------
   Future<void> activateScheme(String id) async {
     try {
       final dio = Dio();
-      final response = await dio.patch(
+      await dio.patch(
         '$baseUrl/api/admin/schemes/$id/status',
         data: {'status': 'active'},
         options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
-      print('Activate response: ${response.data}');
       await fetchSchemes();
-    } catch (e, st) {
-      print('Activate error: $e');
-      state = AsyncValue.error(e, st);
+    } catch (e) {
+      debugPrint('Activate failed: $e');
     }
   }
 
+  // ---------------- DEACTIVATE ----------------
   Future<void> deactivateScheme(String id) async {
     try {
       final dio = Dio();
-      final response = await dio.patch(
+      await dio.patch(
         '$baseUrl/api/admin/schemes/$id/status',
         data: {'status': 'inactive'},
         options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
-      print('Deactivate response: ${response.data}');
       await fetchSchemes();
-    } catch (e, st) {
-      print('Deactivate error: $e');
-      state = AsyncValue.error(e, st);
+    } catch (e) {
+      debugPrint('Deactivate failed: $e');
     }
   }
 }
 
+// ---------------- PROVIDER ----------------
 final schemeProvider =
     StateNotifierProvider<SchemeNotifier, AsyncValue<List<Scheme>>>(
       (ref) => SchemeNotifier(ApiService(token: "")),

@@ -82,23 +82,30 @@ class Sliderbar extends ConsumerWidget {
             press: () => onItemSelected(6),
           ),
           DrawerListTile(
-            title: "Wallet History",
-            svgSrc: "assets/images/icons/wallet.png",
+            title: "KYC Verification",
+            svgSrc: "assets/images/icons/kyc.png",
             selected: selectedIndex == 7,
             press: () => onItemSelected(7),
           ),
           DrawerListTile(
-            title: "Applicator List",
-            svgSrc: "assets/images/icons/contractor.png",
+            title: "Wallet History",
+            svgSrc: "assets/images/icons/wallet.png",
             selected: selectedIndex == 8,
             press: () => onItemSelected(8),
           ),
           DrawerListTile(
-            title: "News Update",
-            svgSrc: "assets/images/icons/news.png",
+            title: "Applicator List",
+            svgSrc: "assets/images/icons/contractor.png",
             selected: selectedIndex == 9,
             press: () => onItemSelected(9),
           ),
+          DrawerListTile(
+            title: "News Update",
+            svgSrc: "assets/images/icons/news.png",
+            selected: selectedIndex == 10,
+            press: () => onItemSelected(10),
+          ),
+
           Spacer(),
           Padding(
             padding: const EdgeInsets.all(16.0),

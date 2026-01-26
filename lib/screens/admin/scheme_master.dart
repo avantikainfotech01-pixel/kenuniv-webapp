@@ -222,7 +222,7 @@ class _SchemeMasterState extends ConsumerState<SchemeMaster> {
                                 schemeName: schemeName,
                                 productName: productName,
                                 points: points,
-                                imageBytes: imageData,
+                                imageData: imageData,
                               );
 
                               _schemeNameController.clear();
@@ -311,6 +311,7 @@ class _SchemeMasterState extends ConsumerState<SchemeMaster> {
                                   DataColumn(label: Text('Points')),
                                   DataColumn(label: Text('Status')),
                                   DataColumn(label: Text('Action')),
+                                  DataColumn(label: Text('Delete')),
                                 ],
                                 rows: List<DataRow>.generate(schemes.length, (
                                   index,
@@ -518,6 +519,80 @@ class _SchemeMasterState extends ConsumerState<SchemeMaster> {
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          ),
+                                          tooltip: 'Delete Scheme',
+                                          onPressed: canEdit
+                                              ? () async {
+                                                  final confirm = await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (ctx) => AlertDialog(
+                                                      title: const Text(
+                                                        'Delete Scheme',
+                                                      ),
+                                                      content: const Text(
+                                                        'Are you sure you want to delete this scheme? This action cannot be undone.',
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                ctx,
+                                                                false,
+                                                              ),
+                                                          child: const Text(
+                                                            'Cancel',
+                                                          ),
+                                                        ),
+                                                        ElevatedButton(
+                                                          style:
+                                                              ElevatedButton.styleFrom(
+                                                                backgroundColor:
+                                                                    Colors.red,
+                                                              ),
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                ctx,
+                                                                true,
+                                                              ),
+                                                          child: const Text(
+                                                            'Delete',
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+
+                                                  if (confirm == true) {
+                                                    await ref
+                                                        .read(
+                                                          schemeProvider
+                                                              .notifier,
+                                                        )
+                                                        .deleteScheme(
+                                                          scheme.id!,
+                                                        );
+
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          'Scheme deleted successfully',
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                      ),
+                                                    );
+                                                  }
+                                                }
+                                              : null,
                                         ),
                                       ),
                                     ],

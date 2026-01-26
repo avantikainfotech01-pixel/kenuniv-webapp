@@ -967,7 +967,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                             onPressed: () async {
                               final recordId = record['_id'];
                               final pdfUrl =
-                                  "${baseUrl}/qr/qr-history/pdf/$recordId";
+                                  "http://api.kenuniv.com/api/qr-history/pdf/$recordId";
 
                               if (kIsWeb) {
                                 try {

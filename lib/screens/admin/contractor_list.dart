@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class ContractorList extends StatefulWidget {
   const ContractorList({super.key});
@@ -12,47 +15,86 @@ class _ContractorListState extends State<ContractorList> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   String? _selectedLocation;
-  final List<String> _locations = ['All', 'Campus A', 'Campus B', 'Campus C'];
+  List<String> _locations = ['All'];
 
-  // Dummy data for DataTable
-  final List<Map<String, String>> _contractors = [
-    {
-      'no': '1',
-      'id': 'CNT-001',
-      'company': 'Alpha Builders',
-      'person': 'John Doe',
-      'date': '2023-06-01',
-      'mobile': '9876543210',
-      'location': 'Campus A',
-    },
-    {
-      'no': '2',
-      'id': 'CNT-002',
-      'company': 'Beta Constructions',
-      'person': 'Jane Smith',
-      'date': '2023-05-20',
-      'mobile': '9123456789',
-      'location': 'Campus B',
-    },
-    {
-      'no': '3',
-      'id': 'CNT-003',
-      'company': 'Gamma Infra',
-      'person': 'Sam Wilson',
-      'date': '2023-04-15',
-      'mobile': '9988776655',
-      'location': 'Campus C',
-    },
-    {
-      'no': '4',
-      'id': 'CNT-004',
-      'company': 'Delta Works',
-      'person': 'Lisa Ray',
-      'date': '2023-05-10',
-      'mobile': '9001122334',
-      'location': 'Campus A',
-    },
-  ];
+  // API base url
+  final String _baseUrl =
+      "http://api.kenuniv.com"; // example: http://65.0.0.0:5000
+
+  // Runtime list of contractors fetched from API
+  List<Map<String, dynamic>> _contractors = [];
+  List<Map<String, dynamic>> _allContractors = [];
+
+  bool _isLoading = false;
+
+  // format createdAt date into readable format
+  String _formatDate(String value) {
+    try {
+      final dt = DateTime.parse(value);
+      return DateFormat('dd-MM-yyyy  hh:mm a').format(dt);
+    } catch (e) {
+      return '-';
+    }
+  }
+
+  // Fetch contractor list from backend
+  Future<void> _fetchContractors() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final url = Uri.parse("$_baseUrl/api/app-users");
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final body = json.decode(response.body);
+
+      final List users = body["data"] ?? [];
+
+      _allContractors = users.map<Map<String, dynamic>>((u) {
+        return {
+          "id": u["_id"] ?? "",
+          "name": u["name"] ?? "-",
+          "mobile": u["mobile"] ?? "-",
+          "address": u["address"] ?? "-",
+          "city": u["city"] ?? "-",
+          "state": u["state"] ?? "-",
+          "date": (u["createdAt"] ?? "").toString(),
+        };
+      }).toList();
+
+      _contractors = List<Map<String, dynamic>>.from(_allContractors);
+
+      // build unique dynamic locations list from API data
+      final Set<String> citySet = {};
+      for (final c in _allContractors) {
+        final city = (c['city'] ?? '').toString().trim();
+        if (city.isNotEmpty) {
+          citySet.add(city);
+        }
+      }
+      _locations = ['All', ...citySet.toList()];
+
+      // reset selected location when refreshing
+      if (!_locations.contains(_selectedLocation)) {
+        _selectedLocation = 'All';
+      }
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchContractors();
+    _searchController.addListener(() {
+      _applyFilters();
+    });
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -67,6 +109,46 @@ class _ContractorListState extends State<ContractorList> {
             "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
+  }
+
+  // Apply filters for search, location and date
+  void _applyFilters() {
+    String search = _searchController.text.trim().toLowerCase();
+    String? selectedLoc = _selectedLocation;
+    String selectedDate = _dateController.text.trim();
+
+    List<Map<String, dynamic>> filtered = List<Map<String, dynamic>>.from(
+      _allContractors,
+    );
+
+    // text search by name or mobile
+    if (search.isNotEmpty) {
+      filtered = filtered.where((c) {
+        final name = (c['name'] ?? '').toString().toLowerCase();
+        final mobile = (c['mobile'] ?? '').toString().toLowerCase();
+        return name.contains(search) || mobile.contains(search);
+      }).toList();
+    }
+
+    // location filter
+    if (selectedLoc != null && selectedLoc.isNotEmpty && selectedLoc != 'All') {
+      filtered = filtered.where((c) {
+        final city = (c['city'] ?? '').toString();
+        return city == selectedLoc;
+      }).toList();
+    }
+
+    // date filter (YYYY-MM-DD from controller matched against createdAt)
+    if (selectedDate.isNotEmpty) {
+      filtered = filtered.where((c) {
+        final dateStr = (c['date'] ?? '').toString();
+        return dateStr.startsWith(selectedDate);
+      }).toList();
+    }
+
+    setState(() {
+      _contractors = filtered;
+    });
   }
 
   @override
@@ -117,6 +199,7 @@ class _ContractorListState extends State<ContractorList> {
                               setState(() {
                                 _selectedLocation = val;
                               });
+                              _applyFilters();
                             },
                             decoration: const InputDecoration(
                               labelText: 'Contract Location',
@@ -157,7 +240,7 @@ class _ContractorListState extends State<ContractorList> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                               ),
-                              onPressed: () {},
+                              onPressed: _applyFilters,
                               child: const Text('APPLY FILTERS'),
                             ),
                           ),
@@ -180,32 +263,31 @@ class _ContractorListState extends State<ContractorList> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('No.')),
-                        DataColumn(label: Text('Contractor ID')),
-                        DataColumn(label: Text('Company Name')),
-                        DataColumn(label: Text('Contact Person')),
-                        DataColumn(label: Text('Registration Date')),
-                        DataColumn(label: Text('Mobile No.')),
-                        DataColumn(label: Text('Location')),
-                      ],
-                      rows: _contractors
-                          .map(
-                            (c) => DataRow(
-                              cells: [
-                                DataCell(Text(c['no']!)),
-                                DataCell(Text(c['id']!)),
-                                DataCell(Text(c['company']!)),
-                                DataCell(Text(c['person']!)),
-                                DataCell(Text(c['date']!)),
-                                DataCell(Text(c['mobile']!)),
-                                DataCell(Text(c['location']!)),
-                              ],
-                            ),
-                          )
-                          .toList(),
-                    ),
+                    child: _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : DataTable(
+                            columns: const [
+                              DataColumn(label: Text('No.')),
+                              DataColumn(label: Text('Name')),
+                              DataColumn(label: Text('Contact Person')),
+                              DataColumn(label: Text('Registration Date')),
+                              DataColumn(label: Text('Mobile No.')),
+                              DataColumn(label: Text('Location')),
+                            ],
+                            rows: List.generate(_contractors.length, (index) {
+                              final c = _contractors[index];
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text((index + 1).toString())),
+                                  DataCell(Text(c['name'] ?? '')),
+                                  DataCell(Text(c['name'] ?? '')),
+                                  DataCell(Text(_formatDate(c['date'] ?? ''))),
+                                  DataCell(Text(c['mobile'] ?? '')),
+                                  DataCell(Text(c['city'] ?? '')),
+                                ],
+                              );
+                            }),
+                          ),
                   ),
                 ),
               ),

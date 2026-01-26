@@ -287,196 +287,233 @@ class _StockMasterState extends ConsumerState<StockMaster> {
               padding: const EdgeInsets.all(18.0),
               child: SizedBox(
                 width: double.infinity,
-                child: schemesAsync.when(
-                  data: (schemes) => stocksAsync.when(
-                    data: (stocks) => SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.15),
-                              blurRadius: 6,
-                              spreadRadius: 1,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // 🔄 Refresh Button aligned to right
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          tooltip: 'Refresh Stock',
+                          icon: const Icon(Icons.refresh, color: Colors.red),
+                          onPressed: () {
+                            ref.refresh(stockProvider);
+                            ref.refresh(schemeProvider);
+                          },
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: DataTable(
-                            dataRowHeight: 70,
-                            headingRowColor: WidgetStateProperty.all(
-                              Colors.red.withOpacity(0.1),
-                            ),
-                            headingTextStyle: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                              fontSize: 15,
-                            ),
-                            columnSpacing: 25,
-                            showBottomBorder: true,
-                            columns: const [
-                              DataColumn(label: Text('No.')),
-                              DataColumn(label: Text('Image')),
-                              DataColumn(label: Text('Gift Name')),
-                              DataColumn(label: Text('Scheme')),
-                              DataColumn(label: Text('Quantity')),
-                              DataColumn(label: Text('Min Qty')),
-                              DataColumn(label: Text('Status')),
-                            ],
-                            rows: List<DataRow>.generate(stocks.length, (
-                              index,
-                            ) {
-                              final stock = stocks[index];
-                              final scheme = schemes.firstWhere(
-                                (s) => s.id == stock.schemeId?.id,
-                                orElse: () => Scheme(
-                                  id: '',
-                                  schemeName: stock.schemeId?.schemeName ?? '',
-                                  productName:
-                                      stock.schemeId?.productName ?? '',
-                                  points: stock.schemeId?.points ?? 0,
-                                ),
-                              );
+                      ],
+                    ),
+                    const SizedBox(height: 8),
 
-                              final isLowStock = stock.quantity <= stock.minQty;
+                    schemesAsync.when(
+                      data: (schemes) => stocksAsync.when(
+                        data: (stocks) {
+                          final validStocks = stocks
+                              .where((s) => s.schemeId != null)
+                              .toList();
 
-                              return DataRow(
-                                color: WidgetStateProperty.all(
-                                  index.isEven
-                                      ? Colors.grey.shade50
-                                      : Colors.white,
-                                ),
-                                cells: [
-                                  DataCell(Text('${index + 1}')),
-                                  DataCell(
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(6),
-                                      child:
-                                          (scheme.image != null &&
-                                              scheme.image!.isNotEmpty)
-                                          ? Image.network(
-                                              '$baseUrl${scheme.image}',
-                                              width: 55,
-                                              height: 55,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : Container(
-                                              width: 55,
-                                              height: 55,
-                                              color: Colors.grey.shade200,
-                                              child: const Icon(
-                                                Icons.image_not_supported,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    Text(
-                                      scheme.productName.isNotEmpty
-                                          ? scheme.productName
-                                          : stock.itemName,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    Text(
-                                      scheme.schemeName,
-                                      style: const TextStyle(
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    Text(
-                                      stock.quantity.toString(),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: isLowStock
-                                            ? Colors.red
-                                            : Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(Text(stock.minQty.toString())),
-                                  DataCell(
-                                    isLowStock
-                                        ? Row(
-                                            children: [
-                                              BlinkWidget(),
-                                              const SizedBox(width: 6),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 4,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.red.withOpacity(
-                                                    0.1,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                  border: Border.all(
-                                                    color: Colors.red.shade300,
-                                                  ),
-                                                ),
-                                                child: const Text(
-                                                  'Low Stock',
-                                                  style: TextStyle(
-                                                    color: Colors.red,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          )
-                                        : Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.green.withOpacity(
-                                                0.1,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: Colors.green.shade300,
-                                              ),
-                                            ),
-                                            child: const Text(
-                                              'OK',
-                                              style: TextStyle(
-                                                color: Colors.green,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.vertical,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.15),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
+                                    offset: const Offset(0, 3),
                                   ),
                                 ],
-                              );
-                            }),
-                          ),
-                        ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: DataTable(
+                                  dataRowHeight: 70,
+                                  headingRowColor: WidgetStateProperty.all(
+                                    Colors.red.withOpacity(0.1),
+                                  ),
+                                  headingTextStyle: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                    fontSize: 15,
+                                  ),
+                                  columnSpacing: 25,
+                                  showBottomBorder: true,
+                                  columns: const [
+                                    DataColumn(label: Text('No.')),
+                                    DataColumn(label: Text('Image')),
+                                    DataColumn(label: Text('Gift Name')),
+                                    DataColumn(label: Text('Scheme')),
+                                    DataColumn(label: Text('Quantity')),
+                                    DataColumn(label: Text('Min Qty')),
+                                    DataColumn(label: Text('Status')),
+                                  ],
+                                  rows: List<DataRow>.generate(validStocks.length, (
+                                    index,
+                                  ) {
+                                    final stock = validStocks[index];
+                                    final scheme = schemes.firstWhere(
+                                      (s) => s.id == stock.schemeId!.id,
+                                      orElse: () => Scheme(
+                                        id: '',
+                                        schemeName: '',
+                                        productName: stock.itemName,
+                                        points: 0,
+                                      ),
+                                    );
+
+                                    final isLowStock =
+                                        stock.quantity <= stock.minQty;
+
+                                    return DataRow(
+                                      color: WidgetStateProperty.all(
+                                        index.isEven
+                                            ? Colors.grey.shade50
+                                            : Colors.white,
+                                      ),
+                                      cells: [
+                                        DataCell(Text('${index + 1}')),
+                                        DataCell(
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            child:
+                                                (scheme.image != null &&
+                                                    scheme.image!.isNotEmpty)
+                                                ? Image.network(
+                                                    '$baseUrl${scheme.image}',
+                                                    width: 55,
+                                                    height: 55,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : Container(
+                                                    width: 55,
+                                                    height: 55,
+                                                    color: Colors.grey.shade200,
+                                                    child: const Icon(
+                                                      Icons.image_not_supported,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            scheme.productName.isNotEmpty
+                                                ? scheme.productName
+                                                : stock.itemName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            scheme.schemeName,
+                                            style: const TextStyle(
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            stock.quantity.toString(),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: isLowStock
+                                                  ? Colors.red
+                                                  : Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(Text(stock.minQty.toString())),
+                                        DataCell(
+                                          isLowStock
+                                              ? Row(
+                                                  children: [
+                                                    BlinkWidget(),
+                                                    const SizedBox(width: 6),
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 4,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red
+                                                            .withOpacity(0.1),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              6,
+                                                            ),
+                                                        border: Border.all(
+                                                          color: Colors
+                                                              .red
+                                                              .shade300,
+                                                        ),
+                                                      ),
+                                                      child: const Text(
+                                                        'Low Stock',
+                                                        style: TextStyle(
+                                                          color: Colors.red,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                              : Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 4,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.green
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
+                                                    border: Border.all(
+                                                      color:
+                                                          Colors.green.shade300,
+                                                    ),
+                                                  ),
+                                                  child: const Text(
+                                                    'OK',
+                                                    style: TextStyle(
+                                                      color: Colors.green,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                        ),
+                                      ],
+                                    );
+                                  }),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (error, stack) => Text('Error: $error'),
                       ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) => Text('Error: $error'),
                     ),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, stack) => Text('Error: $error'),
-                  ),
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) => Text('Error: $error'),
+                  ],
                 ),
               ),
             ),

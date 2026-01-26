@@ -81,92 +81,94 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Align(
               alignment: Alignment.center,
               child: Container(
-                margin: const EdgeInsets.only(right: 50),
-                width: 600,
+                constraints: BoxConstraints(maxWidth: 600, minWidth: 350),
+                width: size.width * 0.45, // responsive for web screens
                 padding: const EdgeInsets.all(30),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.asset('assets/images/logos/Logo 1.png', height: 60),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "Welcome",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Mobile No.",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: mobileController,
-                      decoration: InputDecoration(
-                        hintText: 'Enter Your Mobile No.',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset('assets/images/logos/Logo 1.png', height: 60),
+                      const SizedBox(height: 10),
+                      const Text(
+                        "Welcome",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Password",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        hintText: '***************',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                      const SizedBox(height: 30),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Mobile No.",
+                          style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {},
-                        child: const Text("Forget Password?"),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.shade700,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: mobileController,
+                        decoration: InputDecoration(
+                          hintText: 'Enter Your Mobile No.',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                        onPressed: authState.isLoading ? null : login,
-                        child: authState.isLoading
-                            ? CircularProgressIndicator(color: Colors.white)
-                            : const Text(
-                                "Log In",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white,
+                      ),
+                      const SizedBox(height: 20),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Password",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: '***************',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {},
+                          child: const Text("Forget Password?"),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade700,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onPressed: authState.isLoading ? null : login,
+                          child: authState.isLoading
+                              ? CircularProgressIndicator(color: Colors.white)
+                              : const Text(
+                                  "Log In",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

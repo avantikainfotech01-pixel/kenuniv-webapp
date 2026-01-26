@@ -14,10 +14,22 @@ class PointMaster extends ConsumerStatefulWidget {
 class _PointMasterState extends ConsumerState<PointMaster> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _pointsController = TextEditingController();
-  final TextEditingController _codeController = TextEditingController();
   Color? _selectedColor;
   List<Map<String, dynamic>> _pointMasters = [];
+  final List<String> _codes = [
+    'NM',
+    'RM',
+    'BM',
+    'BM+',
+    'WM',
+    'MF',
+    'FF',
+    'WF',
+    'SF',
+    'SF(W)',
+  ];
 
+  String? _selectedCode;
   final List<Color> _colors = [
     Color(0xFFC5C7C6), // Silver
     Color(0xFFB09778), // Coffy
@@ -72,7 +84,7 @@ class _PointMasterState extends ConsumerState<PointMaster> {
       final body = {
         'points': int.parse(_pointsController.text),
         'color': _selectedColor!.value.toRadixString(16), // send color as hex
-        'code': _codeController.text,
+        'code': _selectedCode,
       };
       try {
         final response = await http.post(
@@ -85,7 +97,7 @@ class _PointMasterState extends ConsumerState<PointMaster> {
             const SnackBar(content: Text('Point Master added successfully')),
           );
           _pointsController.clear();
-          _codeController.clear();
+          _selectedCode = null;
           _selectedColor = null;
           fetchPointMasters();
         } else {
@@ -158,15 +170,24 @@ class _PointMasterState extends ConsumerState<PointMaster> {
                         : (color) => _selectedColor = color,
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _codeController,
+                  DropdownButtonFormField<String>(
+                    value: _selectedCode,
                     decoration: const InputDecoration(
                       labelText: 'Code',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (value) =>
-                        value == null || value.isEmpty ? 'Enter code' : null,
-                    enabled: !isReadOnly,
+                    items: _codes
+                        .map(
+                          (code) => DropdownMenuItem<String>(
+                            value: code,
+                            child: Text(code),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: isReadOnly
+                        ? null
+                        : (value) => setState(() => _selectedCode = value),
+                    validator: (value) => value == null ? 'Select code' : null,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kenuniv/screens/admin/contractor_list.dart';
 import 'package:kenuniv/screens/admin/dashboard_screen.dart';
+import 'package:kenuniv/screens/admin/kyc_list_screen.dart';
 import 'package:kenuniv/screens/admin/news_update.dart';
 import 'package:kenuniv/screens/admin/point_master.dart';
 import 'package:kenuniv/screens/admin/qr_code_screen.dart';
@@ -31,6 +32,7 @@ class _SidebarScaffoldState extends State<SidebarScaffold> {
     PointMaster(),
     QrCodeScreen(),
     RedemptionHistory(),
+    KycListScreen(),
     WalletHistory(),
     ContractorList(),
     NewsUpdate(),
