@@ -1399,4 +1399,4 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
       ),
     );
   }
-}
+}      
