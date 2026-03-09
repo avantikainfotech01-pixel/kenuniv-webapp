@@ -69,7 +69,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            sudo rm -rf /var/www/html/*
+             rm -rf /var/www/html/*
 
       - name: Deploy to VPS via SSH (username + password)
         uses: appleboy/scp-action@v0.1.7
