@@ -1,3 +1,43 @@
+# name: Build and Deploy Flutter Web
+
+# on:
+#   push:
+#     branches:
+#       - master
+
+# jobs:
+#   build-and-deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+
+#       - name: Setup Flutter
+#         uses: subosito/flutter-action@v2
+#         with:
+#           flutter-version: '3.32.7'   # ✅ Pin to a known working version
+
+#       - name: Build Flutter web
+#         run: flutter build web --release
+
+#       - name: Deploy to VPS via SSH (username + password)
+#         uses: appleboy/scp-action@v0.1.7
+#         with:
+#           host: ${{ secrets.VPS_HOST }}
+#           username: ${{ secrets.VPS_USER }}
+#           password: ${{ secrets.VPS_PASSWORD }}
+#           source: "build/web/*"
+#           target: "/var/www/html"
+#           strip_components: 2
+
+#       - name: Reload Nginx
+#         uses: appleboy/ssh-action@v1.1.0
+#         with:
+#           host: ${{ secrets.VPS_HOST }}
+#           username: ${{ secrets.VPS_USER }}
+#           password: ${{ secrets.VPS_PASSWORD }}
+#           script: sudo systemctl reload nginx
 name: Build and Deploy Flutter Web
 
 on:
@@ -16,10 +56,20 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.7'   # ✅ Pin to a known working version
+          channel: 'stable' # ✅ Always uses the latest stable version
 
       - name: Build Flutter web
         run: flutter build web --release
+
+      # ✅ NEW STEP: This wipes the old files so the browser doesn't load a cached version!
+      - name: Clean old website files on VPS
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            sudo rm -rf /var/www/html/*
 
       - name: Deploy to VPS via SSH (username + password)
         uses: appleboy/scp-action@v0.1.7
@@ -31,10 +81,10 @@ jobs:
           target: "/var/www/html"
           strip_components: 2
 
-      - name: Reload Nginx
+      - name: Restart Nginx
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
-          script: sudo systemctl reload nginx
+          script: sudo systemctl restart nginx
