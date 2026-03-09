@@ -1,4 +1,3 @@
-// 🌐 Base URL
 // For Android Emulator use: http://10.0.2.2:5000
 // For iOS Simulator or Web use: http://localhost:5000
 // For real devices, replace with your system's IP (e.g. http://192.168.1.5:5000)
