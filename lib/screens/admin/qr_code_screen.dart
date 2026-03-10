@@ -175,14 +175,27 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                       ],
                     ),
                     pw.SizedBox(height: 3),
-                    pw.Text(
-                      'www.kenuniv.com',
-                      softWrap: false,
-                      style: pw.TextStyle(
-                        fontSize: 6,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
-                      ),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        pw.Icon(
+                          const pw.IconData(0xe894), // Globe/Browser icon
+                          font: iconFont,
+                          size: 7,
+                          color: PdfColors.black,
+                        ),
+                        pw.SizedBox(width: 2),
+                        pw.Text(
+                          'www.kenuniv.com',
+                          softWrap: false,
+                          style: pw.TextStyle(
+                            fontSize: 6,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.black,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
