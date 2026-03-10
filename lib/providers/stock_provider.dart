@@ -42,6 +42,25 @@ class StockNotifier extends StateNotifier<AsyncValue<List<Stock>>> {
       state = AsyncValue.error(e, st);
     }
   }
+
+  // ---------------- DELETE ----------------
+  Future<void> deleteStock(String id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("$baseUrl/api/admin/stocks/$id"),
+        headers: {"Content-Type": "application/json"},
+      );
+      if (response.statusCode == 200) {
+        await fetchStocks();
+      } else {
+        throw Exception("Failed to delete stock");
+      }
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      print(e);
+      throw e;
+    }
+  }
 }
 
 final stockProvider =

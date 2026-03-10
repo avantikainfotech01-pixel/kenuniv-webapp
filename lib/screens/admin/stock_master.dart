@@ -22,13 +22,14 @@ class _StockMasterState extends ConsumerState<StockMaster> {
   DateTime? selectedDate;
   String? selectedSchemeId;
   String? selectedProductName;
-
+  String? _editingStockId; // Tracks which stock we are currently editing
   Future<void> _submitStock() async {
-    // Get permission state
     final authState = ref.read(authProvider);
     final canWrite = authState.permissions?['stock'] == true;
     final isReadOnly = !canWrite;
+
     if (isReadOnly) return;
+
     if (selectedSchemeId == null ||
         _quantityController.text.isEmpty ||
         _minQtyController.text.isEmpty) {
@@ -38,7 +39,6 @@ class _StockMasterState extends ConsumerState<StockMaster> {
       return;
     }
 
-    final url = Uri.parse('$baseUrl/api/admin/stocks');
     final body = {
       "schemeId": selectedSchemeId!,
       "itemName": selectedProductName ?? "",
@@ -47,22 +47,49 @@ class _StockMasterState extends ConsumerState<StockMaster> {
     };
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(body),
-      );
+      http.Response response;
+
+      if (_editingStockId != null) {
+        // ✏️ EDIT STOCK (PUT Request)
+        final url = Uri.parse('$baseUrl/api/admin/stocks/$_editingStockId');
+        response = await http.put(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(body),
+        );
+      } else {
+        // ➕ ADD STOCK (POST Request)
+        final url = Uri.parse('$baseUrl/api/admin/stocks');
+        response = await http.post(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(body),
+        );
+      }
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Stock added successfully')),
+          SnackBar(
+            content: Text(
+              _editingStockId == null
+                  ? 'Stock added successfully'
+                  : 'Stock updated successfully',
+            ),
+            backgroundColor: Colors.green,
+          ),
         );
+
+        // Refresh the table
+        ref.refresh(stockProvider);
+
+        // Clear the form
         _quantityController.clear();
         _minQtyController.clear();
         setState(() {
           selectedSchemeId = null;
           selectedProductName = null;
           selectedDate = null;
+          _editingStockId = null; // Exit edit mode
         });
       } else {
         ScaffoldMessenger.of(
@@ -263,9 +290,11 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                           ),
                         ),
                         onPressed: isReadOnly ? null : _submitStock,
-                        child: const Text(
-                          'Submit',
-                          style: TextStyle(
+                        child: Text(
+                          _editingStockId == null
+                              ? 'Submit'
+                              : 'Update', // CHANGED
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -350,6 +379,7 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                                     DataColumn(label: Text('Quantity')),
                                     DataColumn(label: Text('Min Qty')),
                                     DataColumn(label: Text('Status')),
+                                    DataColumn(label: Text('Actions')),
                                   ],
                                   rows: List<DataRow>.generate(validStocks.length, (
                                     index,
@@ -431,6 +461,7 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                                           ),
                                         ),
                                         DataCell(Text(stock.minQty.toString())),
+
                                         DataCell(
                                           isLowStock
                                               ? Row(
@@ -496,6 +527,164 @@ class _StockMasterState extends ConsumerState<StockMaster> {
                                                     ),
                                                   ),
                                                 ),
+                                        ),
+                                        DataCell(
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              // ✏️ EDIT BUTTON
+                                              // ✏️ EDIT BUTTON
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.edit,
+                                                  color: Colors.blue,
+                                                ),
+                                                tooltip: 'Edit Stock',
+                                                onPressed: isReadOnly
+                                                    ? null
+                                                    : () {
+                                                        // 1. Check if the scheme is actually in the active list
+                                                        final isActiveScheme =
+                                                            schemes.any(
+                                                              (s) =>
+                                                                  s.status ==
+                                                                      'active' &&
+                                                                  s.id ==
+                                                                      scheme.id,
+                                                            );
+
+                                                        setState(() {
+                                                          _editingStockId =
+                                                              stock.id;
+                                                          // 2. Only assign if active. Otherwise, leave it null so it doesn't crash!
+                                                          selectedSchemeId =
+                                                              isActiveScheme
+                                                              ? scheme.id
+                                                              : null;
+
+                                                          selectedProductName =
+                                                              scheme
+                                                                  .productName
+                                                                  .isNotEmpty
+                                                              ? scheme
+                                                                    .productName
+                                                              : stock.itemName;
+                                                          _quantityController
+                                                              .text = stock
+                                                              .quantity
+                                                              .toString();
+                                                          _minQtyController
+                                                              .text = stock
+                                                              .minQty
+                                                              .toString();
+                                                        });
+
+                                                        // 3. Optional: Alert the user if the scheme was missing
+                                                        if (!isActiveScheme) {
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                'Original scheme is inactive or deleted. Please select a new active scheme.',
+                                                              ),
+                                                              backgroundColor:
+                                                                  Colors.orange,
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                              ),
+                                              // 🗑️ DELETE BUTTON
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete,
+                                                  color: Colors.red,
+                                                ),
+                                                tooltip: 'Delete Stock',
+                                                onPressed: isReadOnly
+                                                    ? null
+                                                    : () async {
+                                                        final confirm = await showDialog<bool>(
+                                                          context: context,
+                                                          builder: (ctx) => AlertDialog(
+                                                            title: const Text(
+                                                              'Delete Stock',
+                                                            ),
+                                                            content: const Text(
+                                                              'Are you sure you want to delete this stock?',
+                                                            ),
+                                                            actions: [
+                                                              TextButton(
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                      ctx,
+                                                                      false,
+                                                                    ),
+                                                                child:
+                                                                    const Text(
+                                                                      'Cancel',
+                                                                    ),
+                                                              ),
+                                                              ElevatedButton(
+                                                                style: ElevatedButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .red,
+                                                                ),
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                      ctx,
+                                                                      true,
+                                                                    ),
+                                                                child:
+                                                                    const Text(
+                                                                      'Delete',
+                                                                    ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                        if (confirm == true) {
+                                                          try {
+                                                            await ref
+                                                                .read(
+                                                                  stockProvider
+                                                                      .notifier,
+                                                                )
+                                                                .deleteStock(
+                                                                  stock.id!,
+                                                                );
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              const SnackBar(
+                                                                content: Text(
+                                                                  'Stock deleted successfully',
+                                                                ),
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .green,
+                                                              ),
+                                                            );
+                                                          } catch (e) {
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                  'Failed to delete stock: $e',
+                                                                ),
+                                                                backgroundColor:
+                                                                    Colors.red,
+                                                              ),
+                                                            );
+                                                          }
+                                                        }
+                                                      },
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     );

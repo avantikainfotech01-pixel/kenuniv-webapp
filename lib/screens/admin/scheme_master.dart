@@ -18,7 +18,7 @@ class _SchemeMasterState extends ConsumerState<SchemeMaster> {
   final ImagePicker _picker = ImagePicker();
   Uint8List? _webImageBytes;
   XFile? _imageFile;
-
+  String? _editingId;
   final TextEditingController _schemeNameController = TextEditingController();
   final TextEditingController _productNameController = TextEditingController();
   final TextEditingController _pointsController = TextEditingController();
@@ -216,23 +216,32 @@ class _SchemeMasterState extends ConsumerState<SchemeMaster> {
                             } else {
                               imageData = File(_imageFile!.path);
                             }
-
                             try {
                               await schemeNotifier.addScheme(
+                                id: _editingId, // Pass the ID!
                                 schemeName: schemeName,
                                 productName: productName,
                                 points: points,
-                                imageData: imageData,
+                                imageData:
+                                    imageData, // This can now be null if they didn't pick a new image
                               );
 
                               _schemeNameController.clear();
                               _productNameController.clear();
                               _pointsController.clear();
-                              setState(() => _imageFile = null);
+                              setState(() {
+                                _imageFile = null;
+                                _webImageBytes = null;
+                                _editingId = null; // Clear edit state
+                              });
 
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Scheme added successfully!'),
+                                SnackBar(
+                                  content: Text(
+                                    _editingId == null
+                                        ? 'Scheme added successfully!'
+                                        : 'Scheme updated successfully!',
+                                  ),
                                   backgroundColor: Colors.green,
                                 ),
                               );
@@ -522,77 +531,129 @@ class _SchemeMasterState extends ConsumerState<SchemeMaster> {
                                         ),
                                       ),
                                       DataCell(
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.red,
-                                          ),
-                                          tooltip: 'Delete Scheme',
-                                          onPressed: canEdit
-                                              ? () async {
-                                                  final confirm = await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (ctx) => AlertDialog(
-                                                      title: const Text(
-                                                        'Delete Scheme',
-                                                      ),
-                                                      content: const Text(
-                                                        'Are you sure you want to delete this scheme? This action cannot be undone.',
-                                                      ),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                ctx,
-                                                                false,
-                                                              ),
-                                                          child: const Text(
-                                                            'Cancel',
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            // ✏️ EDIT BUTTON
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                color: Colors.blue,
+                                              ),
+                                              tooltip: 'Edit Scheme',
+                                              onPressed: canEdit
+                                                  ? () {
+                                                      setState(() {
+                                                        _editingId = scheme.id;
+                                                        _schemeNameController
+                                                                .text =
+                                                            scheme.schemeName;
+                                                        _productNameController
+                                                                .text =
+                                                            scheme.productName;
+                                                        _pointsController.text =
+                                                            scheme.points
+                                                                .toString();
+                                                        _imageFile =
+                                                            null; // Reset image picker
+                                                        _webImageBytes = null;
+                                                      });
+                                                      // Optional: Scroll back to top so they see the text fields
+                                                    }
+                                                  : null,
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
+                                              ),
+                                              tooltip: 'Delete Scheme',
+                                              onPressed: canEdit
+                                                  ? () async {
+                                                      // 1. Show confirmation dialog
+                                                      final confirm = await showDialog<bool>(
+                                                        context: context,
+                                                        builder: (ctx) => AlertDialog(
+                                                          title: const Text(
+                                                            'Delete Scheme',
                                                           ),
-                                                        ),
-                                                        ElevatedButton(
-                                                          style:
-                                                              ElevatedButton.styleFrom(
+                                                          content: const Text(
+                                                            'Are you sure you want to delete this scheme? This action cannot be undone and will delete related stock.',
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.pop(
+                                                                    ctx,
+                                                                    false,
+                                                                  ),
+                                                              child: const Text(
+                                                                'Cancel',
+                                                              ),
+                                                            ),
+                                                            ElevatedButton(
+                                                              style: ElevatedButton.styleFrom(
                                                                 backgroundColor:
                                                                     Colors.red,
                                                               ),
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                ctx,
-                                                                true,
+                                                              onPressed: () =>
+                                                                  Navigator.pop(
+                                                                    ctx,
+                                                                    true,
+                                                                  ),
+                                                              child: const Text(
+                                                                'Delete',
+                                                                style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
                                                               ),
-                                                          child: const Text(
-                                                            'Delete',
-                                                          ),
+                                                            ),
+                                                          ],
                                                         ),
-                                                      ],
-                                                    ),
-                                                  );
+                                                      );
 
-                                                  if (confirm == true) {
-                                                    await ref
-                                                        .read(
-                                                          schemeProvider
-                                                              .notifier,
-                                                        )
-                                                        .deleteScheme(
-                                                          scheme.id!,
-                                                        );
+                                                      // 2. If user clicked "Delete", proceed with deletion
+                                                      if (confirm == true) {
+                                                        try {
+                                                          await ref
+                                                              .read(
+                                                                schemeProvider
+                                                                    .notifier,
+                                                              )
+                                                              .deleteScheme(
+                                                                scheme.id!,
+                                                              );
 
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          'Scheme deleted successfully',
-                                                        ),
-                                                        backgroundColor:
-                                                            Colors.green,
-                                                      ),
-                                                    );
-                                                  }
-                                                }
-                                              : null,
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                'Scheme deleted successfully',
+                                                              ),
+                                                              backgroundColor:
+                                                                  Colors.green,
+                                                            ),
+                                                          );
+                                                        } catch (e) {
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(
+                                                                'Failed to delete scheme: $e',
+                                                              ),
+                                                              backgroundColor:
+                                                                  Colors.red,
+                                                            ),
+                                                          );
+                                                        }
+                                                      }
+                                                    }
+                                                  : null,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
