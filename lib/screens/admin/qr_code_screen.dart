@@ -36,23 +36,25 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
   int _loadingPdfIndex = 0;
 
   // ==========================================
-  // LOGOS AND LAYOUT BUILDERS
+  // LOGOS AND LAYOUT BUILDERS (MAXIMIZED)
   // ==========================================
 
-  // 1. English Logo (KENUNIV)
   pw.Widget _buildKenunivLogo({bool isBw = false}) {
     return pw.Container(
-      width: 70,
+      width: 90, // MAXIMIZED WIDTH
       color: PdfColors.white,
       alignment: pw.Alignment.center,
-      padding: const pw.EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 1, vertical: 1),
       child: pw.Row(
         mainAxisSize: pw.MainAxisSize.min,
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.RichText(
             text: pw.TextSpan(
-              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+              style: pw.TextStyle(
+                fontSize: 12.5,
+                fontWeight: pw.FontWeight.bold,
+              ), // MAXIMIZED FONT
               children: [
                 pw.TextSpan(
                   text: 'KEN',
@@ -75,7 +77,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
               style: pw.TextStyle(
                 color: PdfColors.black,
                 fontWeight: pw.FontWeight.bold,
-                fontSize: 3,
+                fontSize: 4,
               ),
             ),
           ),
@@ -84,16 +86,18 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
     );
   }
 
-  // 2. Hindi Logo (केनयुनिव)
   pw.Widget _buildHindiKenunivLogo({bool isBw = false}) {
     return pw.Container(
-      width: 70,
+      width: 90, // MAXIMIZED WIDTH
       color: PdfColors.white,
       alignment: pw.Alignment.center,
-      padding: const pw.EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 1, vertical: 1),
       child: pw.RichText(
         text: pw.TextSpan(
-          style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+          style: pw.TextStyle(
+            fontSize: 12.5,
+            fontWeight: pw.FontWeight.bold,
+          ), // MAXIMIZED FONT
           children: [
             pw.TextSpan(
               text: 'केन',
@@ -112,7 +116,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
   }
 
   // ------------------------------------------------------------------
-  // LAYOUT 2: Final Layout with Icons and proper T&C placement
+  // LAYOUT 2: Final Layout Touching Dotted Lines
   // ------------------------------------------------------------------
   pw.Widget _buildLayout2(
     dynamic qr,
@@ -121,7 +125,12 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
     bool isBw = false,
   }) {
     return pw.Container(
-      padding: const pw.EdgeInsets.fromLTRB(4, 4, 4, 3),
+      padding: const pw.EdgeInsets.fromLTRB(
+        2,
+        2,
+        2,
+        1,
+      ), // MINIMIZED PADDING TO TOUCH LINES
       decoration: pw.BoxDecoration(
         border: pw.Border.all(
           color: isBw ? PdfColors.black : PdfColors.grey,
@@ -133,15 +142,13 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
         mainAxisSize: pw.MainAxisSize.min,
         mainAxisAlignment: pw.MainAxisAlignment.center,
         children: [
-          // TOP SECTION: Text on left, QR on right
           pw.Row(
             mainAxisSize: pw.MainAxisSize.min,
             mainAxisAlignment: pw.MainAxisAlignment.center,
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              // Left Column
               pw.Container(
-                width: 72,
+                width: 90, // MAXIMIZED WIDTH
                 child: pw.Column(
                   mainAxisSize: pw.MainAxisSize.min,
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -150,8 +157,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                     _buildKenunivLogo(isBw: isBw),
                     pw.SizedBox(height: 2),
                     _buildHindiKenunivLogo(isBw: isBw),
-                    pw.SizedBox(height: 6),
-                    // Phone Icon + Number
+                    pw.SizedBox(height: 5),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.center,
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -159,7 +165,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                         pw.Icon(
                           const pw.IconData(0xe0cd),
                           font: iconFont,
-                          size: 7,
+                          size: 8.5, // MAXIMIZED ICON
                           color: PdfColors.black,
                         ),
                         pw.SizedBox(width: 2),
@@ -167,7 +173,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                           '1800 890 7606',
                           softWrap: false,
                           style: pw.TextStyle(
-                            fontSize: 7.5,
+                            fontSize: 8.5, // MAXIMIZED FONT
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.black,
                           ),
@@ -180,9 +186,9 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
                         pw.Icon(
-                          const pw.IconData(0xe894), // Globe/Browser icon
+                          const pw.IconData(0xe894),
                           font: iconFont,
-                          size: 7,
+                          size: 8.5, // MAXIMIZED ICON
                           color: PdfColors.black,
                         ),
                         pw.SizedBox(width: 2),
@@ -190,7 +196,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                           'www.kenuniv.com',
                           softWrap: false,
                           style: pw.TextStyle(
-                            fontSize: 6,
+                            fontSize: 7, // MAXIMIZED FONT
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.black,
                           ),
@@ -201,21 +207,24 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                 ),
               ),
 
-              pw.SizedBox(width: 6),
+              pw.SizedBox(width: 4),
 
-              // Right Column: QR Code + Unique Code
               pw.Column(
                 mainAxisSize: pw.MainAxisSize.min,
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Image(imageProvider, height: 56, width: 56),
-                  pw.SizedBox(height: 4),
+                  pw.Image(
+                    imageProvider,
+                    height: 68,
+                    width: 68,
+                  ), // MAXIMIZED QR
+                  pw.SizedBox(height: 3),
                   pw.Text(
                     '${qr.uniqueCode}',
                     softWrap: false,
                     style: pw.TextStyle(
-                      fontSize: 9,
+                      fontSize: 10.5, // MAXIMIZED FONT
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.black,
                     ),
@@ -225,28 +234,64 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
             ],
           ),
 
-          pw.SizedBox(height: 5),
+          pw.SizedBox(height: 4),
 
-          // BOTTOM SECTION: Terms & Conditions at bottom center
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.center,
+          // BOTTOM SECTION: Terms & Download App
+          pw.Column(
+            mainAxisSize: pw.MainAxisSize.min,
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              pw.Icon(
-                const pw.IconData(0xe88e),
-                font: iconFont,
-                size: 5,
-                color: PdfColors.black,
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Icon(
+                    const pw.IconData(0xe88e),
+                    font: iconFont,
+                    size: 6, // MAXIMIZED ICON
+                    color: PdfColors.black,
+                  ),
+                  pw.SizedBox(width: 2),
+                  pw.Text(
+                    "Terms & Conditions apply",
+                    softWrap: false,
+                    style: pw.TextStyle(
+                      fontSize: 6.5, // MAXIMIZED FONT
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
+                    ),
+                  ),
+                ],
               ),
-              pw.SizedBox(width: 2),
-              pw.Text(
-                "Terms & Conditions apply",
-                softWrap: false,
-                style: pw.TextStyle(
-                  fontSize: 5.5,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.black,
-                ),
+              pw.SizedBox(height: 2),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Icon(
+                    const pw.IconData(0xe859), // Android Icon
+                    font: iconFont,
+                    size: 7, // MAXIMIZED ICON
+                    color: PdfColors.black,
+                  ),
+                  pw.SizedBox(width: 1),
+                  pw.Icon(
+                    const pw.IconData(0xe326), // iPhone Icon
+                    font: iconFont,
+                    size: 7, // MAXIMIZED ICON
+                    color: PdfColors.black,
+                  ),
+                  pw.SizedBox(width: 2),
+                  pw.Text(
+                    "Download app from Playstore & Appstore",
+                    softWrap: false,
+                    style: pw.TextStyle(
+                      fontSize: 5.5, // MAXIMIZED FONT
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -262,7 +307,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
   pw.Widget _buildPageBorder(String pointCode) {
     return pw.Positioned.fill(
       child: pw.Container(
-        margin: const pw.EdgeInsets.all(0), // Removed margin to touch corners
+        margin: const pw.EdgeInsets.all(0),
         decoration: pw.BoxDecoration(
           border: pw.Border.all(width: 1.3, color: PdfColors.black),
         ),
@@ -783,7 +828,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                     );
                                   }
 
-                                  // FIX: Add empty containers so the grid never changes sizes!
                                   while (qrWidgets.length < 18) {
                                     qrWidgets.add(pw.Container());
                                   }
@@ -791,6 +835,9 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                   pdf.addPage(
                                     pw.Page(
                                       pageFormat: PdfPageFormat.a4,
+                                      margin: pw
+                                          .EdgeInsets
+                                          .zero, // REMOVED PAGE MARGINS
                                       build: (pw.Context context) {
                                         return pw.Stack(
                                           children: [
@@ -799,21 +846,16 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                             ),
                                             _buildPageBorder(""),
                                             pw.Padding(
-                                              padding:
-                                                  const pw.EdgeInsets.fromLTRB(
-                                                    15,
-                                                    20,
-                                                    15,
-                                                    20,
-                                                  ),
+                                              padding: const pw.EdgeInsets.all(
+                                                5,
+                                              ),
                                               child: pw.Align(
                                                 alignment: pw.Alignment.topLeft,
                                                 child: pw.GridView(
                                                   crossAxisCount: 3,
-                                                  mainAxisSpacing: 10,
-                                                  crossAxisSpacing: 8,
-                                                  childAspectRatio:
-                                                      1.52, // Perfect fit for new taller layout
+                                                  mainAxisSpacing: 3,
+                                                  crossAxisSpacing: 3,
+                                                  childAspectRatio: 1.40,
                                                   children: qrWidgets,
                                                 ),
                                               ),
@@ -936,7 +978,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                     );
                                   }
 
-                                  // FIX: Add empty containers so the grid never changes sizes!
                                   while (qrWidgets.length < 18) {
                                     qrWidgets.add(pw.Container());
                                   }
@@ -944,26 +985,25 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                   pdf.addPage(
                                     pw.Page(
                                       pageFormat: PdfPageFormat.a4,
+                                      margin: pw
+                                          .EdgeInsets
+                                          .zero, // REMOVED PAGE MARGINS
                                       build: (pw.Context context) {
                                         return pw.Stack(
                                           children: [
                                             pw.Container(color: bgColor),
                                             _buildPageBorder(pointCode),
                                             pw.Padding(
-                                              padding:
-                                                  const pw.EdgeInsets.fromLTRB(
-                                                    15,
-                                                    20,
-                                                    15,
-                                                    20,
-                                                  ),
+                                              padding: const pw.EdgeInsets.all(
+                                                5,
+                                              ),
                                               child: pw.Align(
                                                 alignment: pw.Alignment.topLeft,
                                                 child: pw.GridView(
                                                   crossAxisCount: 3,
-                                                  mainAxisSpacing: 10,
-                                                  crossAxisSpacing: 8,
-                                                  childAspectRatio: 1.52,
+                                                  mainAxisSpacing: 3,
+                                                  crossAxisSpacing: 3,
+                                                  childAspectRatio: 1.40,
                                                   children: qrWidgets,
                                                 ),
                                               ),
@@ -1073,7 +1113,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                     );
                                   }
 
-                                  // FIX: Add empty containers so the grid never changes sizes!
                                   while (qrWidgets.length < 18) {
                                     qrWidgets.add(pw.Container());
                                   }
@@ -1081,6 +1120,9 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                   pdf.addPage(
                                     pw.Page(
                                       pageFormat: PdfPageFormat.a4,
+                                      margin: pw
+                                          .EdgeInsets
+                                          .zero, // REMOVED PAGE MARGINS
                                       build: (pw.Context context) {
                                         return pw.Stack(
                                           children: [
@@ -1089,20 +1131,16 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                             ),
                                             _buildPageBorder(""),
                                             pw.Padding(
-                                              padding:
-                                                  const pw.EdgeInsets.fromLTRB(
-                                                    15,
-                                                    20,
-                                                    15,
-                                                    20,
-                                                  ),
+                                              padding: const pw.EdgeInsets.all(
+                                                5,
+                                              ),
                                               child: pw.Align(
                                                 alignment: pw.Alignment.topLeft,
                                                 child: pw.GridView(
                                                   crossAxisCount: 3,
-                                                  mainAxisSpacing: 10,
-                                                  crossAxisSpacing: 8,
-                                                  childAspectRatio: 1.52,
+                                                  mainAxisSpacing: 3,
+                                                  crossAxisSpacing: 3,
+                                                  childAspectRatio: 1.40,
                                                   children: qrWidgets,
                                                 ),
                                               ),
