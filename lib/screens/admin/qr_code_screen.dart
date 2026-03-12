@@ -41,7 +41,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
 
   pw.Widget _buildKenunivLogo({bool isBw = false}) {
     return pw.Container(
-      width: 90, // MAXIMIZED WIDTH
+      width: 90,
       color: PdfColors.white,
       alignment: pw.Alignment.center,
       padding: const pw.EdgeInsets.symmetric(horizontal: 1, vertical: 1),
@@ -54,7 +54,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
               style: pw.TextStyle(
                 fontSize: 12.5,
                 fontWeight: pw.FontWeight.bold,
-              ), // MAXIMIZED FONT
+              ),
               children: [
                 pw.TextSpan(
                   text: 'KEN',
@@ -88,16 +88,13 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
 
   pw.Widget _buildHindiKenunivLogo({bool isBw = false}) {
     return pw.Container(
-      width: 90, // MAXIMIZED WIDTH
+      width: 90,
       color: PdfColors.white,
       alignment: pw.Alignment.center,
       padding: const pw.EdgeInsets.symmetric(horizontal: 1, vertical: 1),
       child: pw.RichText(
         text: pw.TextSpan(
-          style: pw.TextStyle(
-            fontSize: 12.5,
-            fontWeight: pw.FontWeight.bold,
-          ), // MAXIMIZED FONT
+          style: pw.TextStyle(fontSize: 12.5, fontWeight: pw.FontWeight.bold),
           children: [
             pw.TextSpan(
               text: 'केन',
@@ -125,12 +122,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
     bool isBw = false,
   }) {
     return pw.Container(
-      padding: const pw.EdgeInsets.fromLTRB(
-        2,
-        2,
-        2,
-        1,
-      ), // MINIMIZED PADDING TO TOUCH LINES
+      padding: const pw.EdgeInsets.fromLTRB(2, 2, 2, 1),
       decoration: pw.BoxDecoration(
         border: pw.Border.all(
           color: isBw ? PdfColors.black : PdfColors.grey,
@@ -148,7 +140,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
               pw.Container(
-                width: 90, // MAXIMIZED WIDTH
+                width: 90,
                 child: pw.Column(
                   mainAxisSize: pw.MainAxisSize.min,
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -165,7 +157,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                         pw.Icon(
                           const pw.IconData(0xe0cd),
                           font: iconFont,
-                          size: 8.5, // MAXIMIZED ICON
+                          size: 8.5,
                           color: PdfColors.black,
                         ),
                         pw.SizedBox(width: 2),
@@ -173,7 +165,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                           '1800 890 7606',
                           softWrap: false,
                           style: pw.TextStyle(
-                            fontSize: 8.5, // MAXIMIZED FONT
+                            fontSize: 8.5,
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.black,
                           ),
@@ -188,7 +180,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                         pw.Icon(
                           const pw.IconData(0xe894),
                           font: iconFont,
-                          size: 8.5, // MAXIMIZED ICON
+                          size: 8.5,
                           color: PdfColors.black,
                         ),
                         pw.SizedBox(width: 2),
@@ -196,7 +188,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                           'www.kenuniv.com',
                           softWrap: false,
                           style: pw.TextStyle(
-                            fontSize: 7, // MAXIMIZED FONT
+                            fontSize: 7,
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.black,
                           ),
@@ -214,17 +206,13 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Image(
-                    imageProvider,
-                    height: 68,
-                    width: 68,
-                  ), // MAXIMIZED QR
+                  pw.Image(imageProvider, height: 68, width: 68),
                   pw.SizedBox(height: 3),
                   pw.Text(
                     '${qr.uniqueCode}',
                     softWrap: false,
                     style: pw.TextStyle(
-                      fontSize: 10.5, // MAXIMIZED FONT
+                      fontSize: 10.5,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.black,
                     ),
@@ -248,7 +236,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                   pw.Icon(
                     const pw.IconData(0xe88e),
                     font: iconFont,
-                    size: 6, // MAXIMIZED ICON
+                    size: 6,
                     color: PdfColors.black,
                   ),
                   pw.SizedBox(width: 2),
@@ -256,7 +244,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                     "Terms & Conditions apply",
                     softWrap: false,
                     style: pw.TextStyle(
-                      fontSize: 6.5, // MAXIMIZED FONT
+                      fontSize: 6.5,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.black,
                     ),
@@ -271,14 +259,14 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                   pw.Icon(
                     const pw.IconData(0xe859), // Android Icon
                     font: iconFont,
-                    size: 7, // MAXIMIZED ICON
+                    size: 7,
                     color: PdfColors.black,
                   ),
                   pw.SizedBox(width: 1),
                   pw.Icon(
                     const pw.IconData(0xe326), // iPhone Icon
                     font: iconFont,
-                    size: 7, // MAXIMIZED ICON
+                    size: 7,
                     color: PdfColors.black,
                   ),
                   pw.SizedBox(width: 2),
@@ -286,7 +274,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                     "Download app from Playstore & Appstore",
                     softWrap: false,
                     style: pw.TextStyle(
-                      fontSize: 5.5, // MAXIMIZED FONT
+                      fontSize: 5.5,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.black,
                     ),
@@ -457,6 +445,9 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
         _qrList = qrs;
         _loading = false;
       });
+      // Refresh history table after generating new QRs
+      _fetchQrHistory();
+
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -835,9 +826,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                   pdf.addPage(
                                     pw.Page(
                                       pageFormat: PdfPageFormat.a4,
-                                      margin: pw
-                                          .EdgeInsets
-                                          .zero, // REMOVED PAGE MARGINS
+                                      margin: pw.EdgeInsets.zero,
                                       build: (pw.Context context) {
                                         return pw.Stack(
                                           children: [
@@ -985,9 +974,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                   pdf.addPage(
                                     pw.Page(
                                       pageFormat: PdfPageFormat.a4,
-                                      margin: pw
-                                          .EdgeInsets
-                                          .zero, // REMOVED PAGE MARGINS
+                                      margin: pw.EdgeInsets.zero,
                                       build: (pw.Context context) {
                                         return pw.Stack(
                                           children: [
@@ -1120,9 +1107,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                   pdf.addPage(
                                     pw.Page(
                                       pageFormat: PdfPageFormat.a4,
-                                      margin: pw
-                                          .EdgeInsets
-                                          .zero, // REMOVED PAGE MARGINS
+                                      margin: pw.EdgeInsets.zero,
                                       build: (pw.Context context) {
                                         return pw.Stack(
                                           children: [
@@ -1364,7 +1349,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                     DataColumn(label: Text('End Serial')),
                     DataColumn(label: Text('Points')),
                     DataColumn(label: Text('Created At')),
-                    DataColumn(label: Text('PDF')),
+                    DataColumn(label: Text('Download Coupon PDF')),
                   ],
                   rows: _qrHistory.map<DataRow>((record) {
                     final DateTime? createdAt = record['createdAt'] != null
@@ -1382,66 +1367,151 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                 : '',
                           ),
                         ),
+                        // ==========================================
+                        // UPDATED HISTORY DOWNLOAD BUTTON
+                        // ==========================================
                         DataCell(
                           IconButton(
                             icon: const Icon(
                               Icons.picture_as_pdf,
                               color: Colors.red,
                             ),
-                            tooltip: 'Re-download PDF',
+                            tooltip: 'Re-download Actual QR Coupons',
                             onPressed: () async {
-                              final recordId = record['_id'];
-                              final pdfUrl =
-                                  "http://api.kenuniv.com/api/qr-history/pdf/$recordId";
-                              if (kIsWeb) {
-                                try {
-                                  final response =
-                                      await html.HttpRequest.request(
-                                        pdfUrl,
-                                        method: 'GET',
-                                        responseType: 'blob',
-                                      );
-                                  if (response.status == 200) {
-                                    final blob = response.response as html.Blob;
-                                    final url =
-                                        html.Url.createObjectUrlFromBlob(blob);
-                                    final anchor = html.AnchorElement(href: url)
-                                      ..download = 'qr_history.pdf'
-                                      ..click();
-                                    html.Url.revokeObjectUrl(url);
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Failed to download PDF (Status ${response.status})',
-                                        ),
+                              // Show Loading Dialog
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              );
+
+                              try {
+                                final start = record['startSerial'];
+                                final end = record['endSerial'];
+
+                                // 1. Fetch QR data from backend using the new route
+                                final response = await ApiService(token: '')
+                                    .getRequest(
+                                      "$baseUrl/api/qrs-by-range?start=$start&end=$end",
+                                    );
+
+                                final List<dynamic> fetchedQrs =
+                                    (response['qrs'] as List)
+                                        .map(
+                                          (q) => _HistoryQrModel(
+                                            serial: q['serial'],
+                                            uniqueCode: q['uniqueCode'],
+                                            qrImage: q['qrImage'],
+                                          ),
+                                        )
+                                        .toList();
+
+                                // 2. Load Fonts
+                                final fontRegular =
+                                    await PdfGoogleFonts.robotoRegular();
+                                final fontBold =
+                                    await PdfGoogleFonts.robotoBold();
+                                final fontFallback =
+                                    await PdfGoogleFonts.notoSansGujaratiRegular();
+                                final fontHindi =
+                                    await PdfGoogleFonts.notoSansDevanagariRegular();
+                                final iconFont =
+                                    await PdfGoogleFonts.materialIconsRegular();
+
+                                final pdf = pw.Document(
+                                  theme: pw.ThemeData.withFont(
+                                    base: fontRegular,
+                                    bold: fontBold,
+                                    fontFallback: [fontFallback, fontHindi],
+                                  ),
+                                );
+
+                                // 3. Build Full PDF Graphic Pages
+                                for (
+                                  int i = 0;
+                                  i < fetchedQrs.length;
+                                  i += 18
+                                ) {
+                                  final batch = fetchedQrs
+                                      .skip(i)
+                                      .take(18)
+                                      .toList();
+                                  final qrWidgets = <pw.Widget>[];
+
+                                  for (var qr in batch) {
+                                    final imageProvider = await networkImage(
+                                      qr.qrImage,
+                                    );
+                                    qrWidgets.add(
+                                      _buildLayout2(
+                                        qr,
+                                        imageProvider,
+                                        iconFont,
+                                        isBw: false,
                                       ),
                                     );
                                   }
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Download failed.'),
+
+                                  while (qrWidgets.length < 18) {
+                                    qrWidgets.add(pw.Container());
+                                  }
+
+                                  pdf.addPage(
+                                    pw.Page(
+                                      pageFormat: PdfPageFormat.a4,
+                                      margin: pw.EdgeInsets.zero,
+                                      build: (pw.Context context) {
+                                        return pw.Stack(
+                                          children: [
+                                            pw.Container(
+                                              color: PdfColors.white,
+                                            ),
+                                            _buildPageBorder(""),
+                                            pw.Padding(
+                                              padding: const pw.EdgeInsets.all(
+                                                5,
+                                              ),
+                                              child: pw.Align(
+                                                alignment: pw.Alignment.topLeft,
+                                                child: pw.GridView(
+                                                  crossAxisCount: 3,
+                                                  mainAxisSpacing: 3,
+                                                  crossAxisSpacing: 3,
+                                                  childAspectRatio: 1.40,
+                                                  children: qrWidgets,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     ),
                                   );
                                 }
-                              } else {
-                                final resp = await http.get(Uri.parse(pdfUrl));
-                                if (resp.statusCode == 200) {
-                                  final bytes = resp.bodyBytes;
+
+                                // Close Loading Dialog
+                                Navigator.pop(context);
+
+                                // 4. Download PDF
+                                if (kIsWeb) {
                                   await Printing.sharePdf(
-                                    bytes: bytes,
-                                    filename: 'qr_history_$recordId.pdf',
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Failed to download PDF (${resp.statusCode})',
-                                      ),
-                                    ),
+                                    bytes: await pdf.save(),
+                                    filename:
+                                        'kenuniv_history_${start}_to_${end}.pdf',
                                   );
                                 }
+                              } catch (e) {
+                                // Close Loading Dialog on Error
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to download PDF: $e'),
+                                  ),
+                                );
                               }
                             },
                           ),
@@ -1456,4 +1526,17 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
       ),
     );
   }
+}
+
+// Simple Helper Model at the bottom of the file
+class _HistoryQrModel {
+  final int serial;
+  final String uniqueCode;
+  final String qrImage;
+
+  _HistoryQrModel({
+    required this.serial,
+    required this.uniqueCode,
+    required this.qrImage,
+  });
 }
