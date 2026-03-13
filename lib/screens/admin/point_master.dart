@@ -35,8 +35,11 @@ class _PointMasterState extends ConsumerState<PointMaster> {
     Color(0xFFB09778), // Coffy
     Color(0xFFE4097F), // Pink
     Color(0xFF008218), // Green
-    Color(0xFF201687), // Blue
-    Color(0xFFC6272B), // Red
+    Color(0xFF201687),
+    Color(0xff015889),
+    Color(0xffc24b0c),
+    Color(0xffc89900),
+    Color(0xFFC6272B),
   ];
 
   @override

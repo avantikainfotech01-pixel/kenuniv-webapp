@@ -24,7 +24,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
   final _endController = TextEditingController();
   final _activeStartController = TextEditingController();
   final _activeEndController = TextEditingController();
-  int? _selectedPoints;
+  Map<String, dynamic>? _selectedPointItem;
   List<dynamic> _qrList = [];
   bool _showAll = false;
   bool _loading = false;
@@ -367,7 +367,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
   // ==========================================
   // API & STATE METHODS
   // ==========================================
-
   Future<void> _fetchPointMaster() async {
     try {
       final response = await ApiService(
@@ -376,21 +375,32 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
 
       if (response != null && mounted) {
         setState(() {
-          final Set<int> seenPoints = {};
+          final Set<String> seenCombos = {};
           _pointsList = [];
 
           for (var item in (response as List)) {
             final int? pointValue = int.tryParse(item['points'].toString());
+            final String codeValue = item['code']?.toString() ?? '';
 
-            if (pointValue != null && !seenPoints.contains(pointValue)) {
-              seenPoints.add(pointValue);
-              item['points'] = pointValue;
-              _pointsList.add(item);
+            if (pointValue != null) {
+              final String uniqueCombo = "${pointValue}_$codeValue";
+
+              if (!seenCombos.contains(uniqueCombo)) {
+                seenCombos.add(uniqueCombo);
+                item['points'] = pointValue;
+                _pointsList.add(item);
+              }
             }
           }
 
+          _pointsList.sort((a, b) {
+            final int pointsA = a['points'] as int;
+            final int pointsB = b['points'] as int;
+            return pointsA.compareTo(pointsB);
+          });
+
           if (_pointsList.isNotEmpty) {
-            _selectedPoints = _pointsList[0]['points'];
+            _selectedPointItem = _pointsList[0];
           }
         });
       }
@@ -408,8 +418,15 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
           response["history"] != null &&
           response["history"].isNotEmpty) {
         setState(() {
-          _nextStart = response["history"][0]["endSerial"] + 1;
+          final lastBatch = response["history"][0];
+
+          // Set Next Start
+          _nextStart = lastBatch["endSerial"] + 1;
           _startController.text = _nextStart.toString();
+
+          // Auto-fill Active/Inactive section with the last generated batch
+          _activeStartController.text = lastBatch["startSerial"].toString();
+          _activeEndController.text = lastBatch["endSerial"].toString();
         });
       } else {
         setState(() {
@@ -438,15 +455,21 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
           .generateQrs(
             serialFrom: int.parse(start),
             serialTo: int.parse(end),
-            points: _selectedPoints!,
+            points: _selectedPointItem!['points'] as int,
           );
       final qrs = ref.read(qrProvider);
       setState(() {
         _qrList = qrs;
         _loading = false;
       });
-      // Refresh history table after generating new QRs
+
+      // Auto-update the active text fields with what was just generated
+      _activeStartController.text = start;
+      _activeEndController.text = end;
+
+      // Refresh history table and set next start up
       _fetchQrHistory();
+      _fetchNextStart();
 
       showDialog(
         context: context,
@@ -468,8 +491,10 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
       if (e.toString().contains('already exists')) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            duration: Duration(milliseconds: 3000),
-            content: Text('Some serial numbers already exist and were skipped'),
+            duration: Duration(milliseconds: 4000),
+            content: Text(
+              'Some serial numbers already exist! Check your Start No.',
+            ),
           ),
         );
       } else {
@@ -506,7 +531,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
     _fetchQrHistory();
     _fetchNextStart();
     _fetchPointMaster();
-    _activeStartController.text = "1";
   }
 
   @override
@@ -571,8 +595,8 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         )
-                      : DropdownButtonFormField<int>(
-                          value: _selectedPoints,
+                      : DropdownButtonFormField<Map<String, dynamic>>(
+                          value: _selectedPointItem,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                             labelText: 'Select Point',
@@ -581,19 +605,21 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                               vertical: 15,
                             ),
                           ),
-                          items: _pointsList.map<DropdownMenuItem<int>>((
-                            point,
-                          ) {
-                            return DropdownMenuItem<int>(
-                              value: point['points'] as int,
-                              child: Text(
-                                '${point['points']} (${point['code']})',
-                              ),
-                            );
-                          }).toList(),
+                          items: _pointsList
+                              .map<DropdownMenuItem<Map<String, dynamic>>>((
+                                point,
+                              ) {
+                                return DropdownMenuItem<Map<String, dynamic>>(
+                                  value: point,
+                                  child: Text(
+                                    '${point['points']} (${point['code']})',
+                                  ),
+                                );
+                              })
+                              .toList(),
                           onChanged: (val) {
                             setState(() {
-                              _selectedPoints = val;
+                              _selectedPointItem = val;
                             });
                           },
                         ),
@@ -932,7 +958,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                 );
 
                                 final pointData = _pointsList.firstWhere(
-                                  (p) => p['points'] == _selectedPoints,
+                                  (p) => p == _selectedPointItem,
                                   orElse: () => {
                                     'color': '#FFFFFF',
                                     'code': '',
@@ -1368,7 +1394,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                           ),
                         ),
                         // ==========================================
-                        // UPDATED HISTORY DOWNLOAD BUTTON
+                        // HISTORY DOWNLOAD - NOW PRE-PRINTED COLORED!
                         // ==========================================
                         DataCell(
                           IconButton(
@@ -1378,7 +1404,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                             ),
                             tooltip: 'Re-download Actual QR Coupons',
                             onPressed: () async {
-                              // Show Loading Dialog
                               showDialog(
                                 context: context,
                                 barrierDismissible: false,
@@ -1392,8 +1417,24 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                               try {
                                 final start = record['startSerial'];
                                 final end = record['endSerial'];
+                                final int recordPoints = record['points'];
 
-                                // 1. Fetch QR data from backend using the new route
+                                // Determine exact colors and codes for this specific history record!
+                                final pointData = _pointsList.firstWhere(
+                                  (p) => p['points'] == recordPoints,
+                                  orElse: () => {
+                                    'color': '#FFFFFF',
+                                    'code': '',
+                                  },
+                                );
+                                final bgColor = PdfColor.fromInt(
+                                  int.parse(
+                                    pointData['color'].replaceFirst('#', 'FF'),
+                                    radix: 16,
+                                  ),
+                                );
+                                final pointCode = pointData['code'];
+
                                 final response = await ApiService(token: '')
                                     .getRequest(
                                       "$baseUrl/api/qrs-by-range?start=$start&end=$end",
@@ -1410,7 +1451,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                         )
                                         .toList();
 
-                                // 2. Load Fonts
                                 final fontRegular =
                                     await PdfGoogleFonts.robotoRegular();
                                 final fontBold =
@@ -1430,7 +1470,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                   ),
                                 );
 
-                                // 3. Build Full PDF Graphic Pages
                                 for (
                                   int i = 0;
                                   i < fetchedQrs.length;
@@ -1451,7 +1490,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                         qr,
                                         imageProvider,
                                         iconFont,
-                                        isBw: false,
+                                        isBw: false, // Ensure full color
                                       ),
                                     );
                                   }
@@ -1467,10 +1506,12 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                       build: (pw.Context context) {
                                         return pw.Stack(
                                           children: [
-                                            pw.Container(
-                                              color: PdfColors.white,
-                                            ),
-                                            _buildPageBorder(""),
+                                            // Apply proper color background
+                                            pw.Container(color: bgColor),
+
+                                            // Apply proper code borders
+                                            _buildPageBorder(pointCode),
+
                                             pw.Padding(
                                               padding: const pw.EdgeInsets.all(
                                                 5,
@@ -1493,10 +1534,8 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                   );
                                 }
 
-                                // Close Loading Dialog
                                 Navigator.pop(context);
 
-                                // 4. Download PDF
                                 if (kIsWeb) {
                                   await Printing.sharePdf(
                                     bytes: await pdf.save(),
@@ -1505,7 +1544,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                                   );
                                 }
                               } catch (e) {
-                                // Close Loading Dialog on Error
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
