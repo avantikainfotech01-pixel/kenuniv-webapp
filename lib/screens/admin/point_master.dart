@@ -32,14 +32,14 @@ class _PointMasterState extends ConsumerState<PointMaster> {
   String? _selectedCode;
   final List<Color> _colors = [
 Color(0xFFE0E0E0), // Light Silver (Replaced C5C7C6)
-    Color(0xFFD7CCC8), // Light Coffy (Replaced B09778)
-    Color(0xFFF8BBD0), // Light Pink (Replaced E4097F)
-    Color(0xFFA5D6A7), // Light Green (Replaced 008218)
-    Color(0xFFB39DDB), // Light Purple (Replaced 3928E0)
-    Color(0xFF81D4FA), // Light Blue (Replaced 015889)
-    Color(0xFFFFAB91), // Light Orange (Replaced c24b0c)
-    Color(0xFFFFF59D), // Light Yellow (Replaced c89900)
-    Color(0xFFEF9A9A), // Light Red/Coral (Replaced C6272B)
+    Color(0xFFC5C7C6), // Light Coffy (Replaced B09778)
+    Color(0xFFE4097F), // Light Pink (Replaced E4097F)
+    Color(0xFF009E19), // Light Green (Replaced 008218)
+    Color(0xFF3928E0), // Light Purple (Replaced 3928E0)
+    Color(0xFF009DFF), // Light Blue (Replaced 015889)
+    Color(0xFFD4500B), // Light Orange (Replaced c24b0c)
+    Color(0xFFD6A400), // Light Yellow (Replaced c89900)
+    Color(0xFFFF0004), // Light Red/Coral (Replaced C6272B)
   ];
 
   @override
