@@ -122,7 +122,8 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
     bool isBw = false,
   }) {
     return pw.Container(
-      padding: const pw.EdgeInsets.fromLTRB(2, 2, 2, 1),
+      // INCREASED TOP PADDING (the second value)
+      padding: const pw.EdgeInsets.fromLTRB(2, 10, 2, 1),
       decoration: pw.BoxDecoration(
         border: pw.Border.all(
           color: isBw ? PdfColors.black : PdfColors.grey,
@@ -132,7 +133,6 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
       ),
       child: pw.Stack(
         children: [
-          // Main content centered
           pw.Column(
             mainAxisSize: pw.MainAxisSize.min,
             mainAxisAlignment: pw.MainAxisAlignment.center,
@@ -140,37 +140,33 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
               pw.Row(
                 mainAxisSize: pw.MainAxisSize.min,
                 mainAxisAlignment: pw.MainAxisAlignment.center,
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                // Keep aligned to top so they stay level with each other
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Container(
                     width: 90,
                     child: pw.Column(
                       mainAxisSize: pw.MainAxisSize.min,
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
                       children: [
                         _buildKenunivLogo(isBw: isBw),
                         pw.SizedBox(height: 2),
                         _buildHindiKenunivLogo(isBw: isBw),
-                        pw.SizedBox(height: 5),
+                        pw.SizedBox(height: 9),
                         pw.Row(
                           mainAxisAlignment: pw.MainAxisAlignment.center,
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
                           children: [
                             pw.Icon(
                               const pw.IconData(0xe0cd),
                               font: iconFont,
                               size: 8.5,
-                              color: PdfColors.black,
                             ),
                             pw.SizedBox(width: 2),
                             pw.Text(
                               '1800 890 7606',
-                              softWrap: false,
                               style: pw.TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: pw.FontWeight.bold,
-                                color: PdfColors.black,
                               ),
                             ),
                           ],
@@ -178,22 +174,18 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                         pw.SizedBox(height: 3),
                         pw.Row(
                           mainAxisAlignment: pw.MainAxisAlignment.center,
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
                           children: [
                             pw.Icon(
                               const pw.IconData(0xe894),
                               font: iconFont,
                               size: 8.5,
-                              color: PdfColors.black,
                             ),
                             pw.SizedBox(width: 2),
                             pw.Text(
                               'www.kenuniv.com',
-                              softWrap: false,
                               style: pw.TextStyle(
                                 fontSize: 7,
                                 fontWeight: pw.FontWeight.bold,
-                                color: PdfColors.black,
                               ),
                             ),
                           ],
@@ -201,50 +193,41 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                       ],
                     ),
                   ),
-                  pw.SizedBox(width: 4),
+                  pw.SizedBox(width: 6),
                   pw.Column(
                     mainAxisSize: pw.MainAxisSize.min,
-                    mainAxisAlignment: pw.MainAxisAlignment.center,
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
                       pw.Image(imageProvider, height: 68, width: 68),
                       pw.SizedBox(height: 3),
                       pw.Text(
                         '${qr.uniqueCode}',
-                        softWrap: false,
                         style: pw.TextStyle(
                           fontSize: 10.5,
                           fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.black,
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-              pw.SizedBox(height: 4),
+              pw.SizedBox(height: 6),
+              // Footer (Terms/Apps)
               pw.Column(
-                mainAxisSize: pw.MainAxisSize.min,
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.center,
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
                       pw.Icon(
                         const pw.IconData(0xe88e),
                         font: iconFont,
                         size: 6,
-                        color: PdfColors.black,
                       ),
                       pw.SizedBox(width: 2),
                       pw.Text(
                         "Terms & Conditions apply",
-                        softWrap: false,
                         style: pw.TextStyle(
                           fontSize: 6.5,
                           fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.black,
                         ),
                       ),
                     ],
@@ -252,29 +235,24 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
                   pw.SizedBox(height: 2),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.center,
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
                       pw.Icon(
                         const pw.IconData(0xe859),
                         font: iconFont,
                         size: 7,
-                        color: PdfColors.black,
                       ),
                       pw.SizedBox(width: 1),
                       pw.Icon(
                         const pw.IconData(0xe326),
                         font: iconFont,
                         size: 7,
-                        color: PdfColors.black,
                       ),
                       pw.SizedBox(width: 2),
                       pw.Text(
                         "Download app from Playstore & Appstore",
-                        softWrap: false,
                         style: pw.TextStyle(
                           fontSize: 5.5,
                           fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.black,
                         ),
                       ),
                     ],
@@ -283,18 +261,13 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
               ),
             ],
           ),
-
-          // CORRECT POSITIONING: Inside the Stack, but outside the Column
+          // Serial number
           pw.Positioned(
             bottom: 0,
             right: 0,
             child: pw.Text(
               '#${qr.serial}',
-              style: pw.TextStyle(
-                fontSize: 8,
-                fontWeight: pw.FontWeight.bold, // Set to Bold
-                color: PdfColors.black,
-              ),
+              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
             ),
           ),
         ],
