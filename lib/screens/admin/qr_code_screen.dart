@@ -130,164 +130,177 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
           style: pw.BorderStyle.dashed,
         ),
       ),
-      child: pw.Column(
-        mainAxisSize: pw.MainAxisSize.min,
-        mainAxisAlignment: pw.MainAxisAlignment.center,
+      child: pw.Stack(
         children: [
-          pw.Row(
+          // Main content centered
+          pw.Column(
             mainAxisSize: pw.MainAxisSize.min,
             mainAxisAlignment: pw.MainAxisAlignment.center,
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              pw.Container(
-                width: 90,
-                child: pw.Column(
-                  mainAxisSize: pw.MainAxisSize.min,
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  mainAxisAlignment: pw.MainAxisAlignment.center,
-                  children: [
-                    _buildKenunivLogo(isBw: isBw),
-                    pw.SizedBox(height: 2),
-                    _buildHindiKenunivLogo(isBw: isBw),
-                    pw.SizedBox(height: 5),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      children: [
-                        pw.Icon(
-                          const pw.IconData(0xe0cd),
-                          font: iconFont,
-                          size: 8.5,
-                          color: PdfColors.black,
-                        ),
-                        pw.SizedBox(width: 2),
-                        pw.Text(
-                          '1800 890 7606',
-                          softWrap: false,
-                          style: pw.TextStyle(
-                            fontSize: 8.5,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                    pw.SizedBox(height: 3),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      children: [
-                        pw.Icon(
-                          const pw.IconData(0xe894),
-                          font: iconFont,
-                          size: 8.5,
-                          color: PdfColors.black,
-                        ),
-                        pw.SizedBox(width: 2),
-                        pw.Text(
-                          'www.kenuniv.com',
-                          softWrap: false,
-                          style: pw.TextStyle(
-                            fontSize: 7,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              pw.SizedBox(width: 4),
-
-              pw.Column(
+              pw.Row(
                 mainAxisSize: pw.MainAxisSize.min,
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Image(imageProvider, height: 68, width: 68),
-                  pw.SizedBox(height: 3),
-                  pw.Text(
-                    '${qr.uniqueCode}',
-                    softWrap: false,
-                    style: pw.TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.black,
+                  pw.Container(
+                    width: 90,
+                    child: pw.Column(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      children: [
+                        _buildKenunivLogo(isBw: isBw),
+                        pw.SizedBox(height: 2),
+                        _buildHindiKenunivLogo(isBw: isBw),
+                        pw.SizedBox(height: 5),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.center,
+                          crossAxisAlignment: pw.CrossAxisAlignment.center,
+                          children: [
+                            pw.Icon(
+                              const pw.IconData(0xe0cd),
+                              font: iconFont,
+                              size: 8.5,
+                              color: PdfColors.black,
+                            ),
+                            pw.SizedBox(width: 2),
+                            pw.Text(
+                              '1800 890 7606',
+                              softWrap: false,
+                              style: pw.TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        pw.SizedBox(height: 3),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.center,
+                          crossAxisAlignment: pw.CrossAxisAlignment.center,
+                          children: [
+                            pw.Icon(
+                              const pw.IconData(0xe894),
+                              font: iconFont,
+                              size: 8.5,
+                              color: PdfColors.black,
+                            ),
+                            pw.SizedBox(width: 2),
+                            pw.Text(
+                              'www.kenuniv.com',
+                              softWrap: false,
+                              style: pw.TextStyle(
+                                fontSize: 7,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
+                  ),
+                  pw.SizedBox(width: 4),
+                  pw.Column(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Image(imageProvider, height: 68, width: 68),
+                      pw.SizedBox(height: 3),
+                      pw.Text(
+                        '${qr.uniqueCode}',
+                        softWrap: false,
+                        style: pw.TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 4),
+              pw.Column(
+                mainAxisSize: pw.MainAxisSize.min,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Icon(
+                        const pw.IconData(0xe88e),
+                        font: iconFont,
+                        size: 6,
+                        color: PdfColors.black,
+                      ),
+                      pw.SizedBox(width: 2),
+                      pw.Text(
+                        "Terms & Conditions apply",
+                        softWrap: false,
+                        style: pw.TextStyle(
+                          fontSize: 6.5,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 2),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Icon(
+                        const pw.IconData(0xe859),
+                        font: iconFont,
+                        size: 7,
+                        color: PdfColors.black,
+                      ),
+                      pw.SizedBox(width: 1),
+                      pw.Icon(
+                        const pw.IconData(0xe326),
+                        font: iconFont,
+                        size: 7,
+                        color: PdfColors.black,
+                      ),
+                      pw.SizedBox(width: 2),
+                      pw.Text(
+                        "Download app from Playstore & Appstore",
+                        softWrap: false,
+                        style: pw.TextStyle(
+                          fontSize: 5.5,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.black,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
 
-          pw.SizedBox(height: 4),
-
-          // BOTTOM SECTION: Terms & Download App
-          pw.Column(
-            mainAxisSize: pw.MainAxisSize.min,
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.center,
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
-                children: [
-                  pw.Icon(
-                    const pw.IconData(0xe88e),
-                    font: iconFont,
-                    size: 6,
-                    color: PdfColors.black,
-                  ),
-                  pw.SizedBox(width: 2),
-                  pw.Text(
-                    "Terms & Conditions apply",
-                    softWrap: false,
-                    style: pw.TextStyle(
-                      fontSize: 6.5,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.black,
-                    ),
-                  ),
-                ],
+          // CORRECT POSITIONING: Inside the Stack, but outside the Column
+          pw.Positioned(
+            bottom: 0,
+            right: 0,
+            child: pw.Text(
+              '#${qr.serial}',
+              style: pw.TextStyle(
+                fontSize: 8,
+                fontWeight: pw.FontWeight.bold, // Set to Bold
+                color: PdfColors.black,
               ),
-              pw.SizedBox(height: 2),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.center,
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
-                children: [
-                  pw.Icon(
-                    const pw.IconData(0xe859), // Android Icon
-                    font: iconFont,
-                    size: 7,
-                    color: PdfColors.black,
-                  ),
-                  pw.SizedBox(width: 1),
-                  pw.Icon(
-                    const pw.IconData(0xe326), // iPhone Icon
-                    font: iconFont,
-                    size: 7,
-                    color: PdfColors.black,
-                  ),
-                  pw.SizedBox(width: 2),
-                  pw.Text(
-                    "Download app from Playstore & Appstore",
-                    softWrap: false,
-                    style: pw.TextStyle(
-                      fontSize: 5.5,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
-
   // ==========================================
   // PAGE HELPERS
   // ==========================================
